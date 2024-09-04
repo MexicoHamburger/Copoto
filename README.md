@@ -57,7 +57,7 @@ git commit -m "[feat](프로젝트이름)#7 - OO기능 개발"
 
 6. 개발 도중 다른 이슈가 병합되었을 가능성이 있기 떄문에, main 브랜치를 한 번 더 pull 해줍니다.
 ```
-git pull origin main
+git pull origin master
 ```
 <br>
 
@@ -79,7 +79,7 @@ git push origin feature/#7
 
 10. main 브랜치로 이동 후 1번 과정부터 다시 반복해줍니다.
 ```
-git switch main
+git switch master
 ```
 <br>
 
