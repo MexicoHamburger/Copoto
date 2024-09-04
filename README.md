@@ -1,8 +1,6 @@
 # Copoto
 project copoto
 
-# SUCPI
-
 ## **📝 커밋 컨벤션**
   
 <details>
