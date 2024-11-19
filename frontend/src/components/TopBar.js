@@ -2,7 +2,7 @@ import CopotoLogo from "../images/copotoLogo.png"
 
 function TopBar() {
     return (
-        <div class = "border-2">
+        <div className = "border-2">
             <img src={CopotoLogo} alt = "Copoto Logo"
             className = "max-w-[200px] p-4"/>
         </div>

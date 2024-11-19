@@ -1,12 +1,16 @@
-import SampleSidebar from "./components/SampleSidebar.js"
-import TopBar from "./components/TopBar.js"
 import './index.css'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from './pages/Home'
+import LoginPage from './pages/LoginPage'
+
 function App() {
   return (
-    <>
-      <TopBar />
-      <SampleSidebar />
-    </>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
+    </Router>
   );
 }
 
