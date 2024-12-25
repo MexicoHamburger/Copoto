@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -11,6 +13,10 @@ function LoginPage() {
 
     //이 값을 이용해 db를 업데이트하면 됩니다
   };
+
+  const gotoRegisterPage = () => {
+    navigate("/register");
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -50,8 +56,11 @@ function LoginPage() {
             Login
           </button>
           <div className = "flex justify-between mt-4">
+            <h3 
+              className = "text-m text-center hover:cursor-pointer"
+              onClick = {gotoRegisterPage}
+            >새로 오셨나요?</h3>
             <h3 className = "text-m text-center">계정을 잊으셨나요?</h3>
-            <h3 className = "text-m text-center">새로 오셨나요?</h3>
           </div>
         </form>
       </div>
