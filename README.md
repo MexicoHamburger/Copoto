@@ -1,7 +1,14 @@
 # Copoto
-project copoto
+### A Corporate Side project + Graduation Project of
+SKKU SW 20 Yongjoon Kwon ( Frontend + a bit of backend )
+<br>
+SKKU SW 20 Seongcheol Kang ( Backend )
+<br>
+SKKU SW 20 Jiho Kim ( Backend )
 
-## ** HOW TO START **
+## HOW TO START
+<details>
+  
 ### Frontend
 
 1. Copoto / frontend으로 이동합니다.
@@ -13,7 +20,7 @@ project copoto
 2. ./gradlew bootRun
 3. 만약 권한이 없다면 chmod +x gradlew 후 실행
 4. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다.
-
+</details>
 
 ## **📝 커밋 컨벤션**
   
