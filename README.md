@@ -19,7 +19,17 @@ SKKU SW 20 Jiho Kim ( Backend )
 1. Copoto / backend / project로 이동합니다.
 2. ./gradlew bootRun
 3. 만약 권한이 없다면 chmod +x gradlew 후 실행
-4. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다.
+4. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다. (이걸 추천)
+</details>
+
+## How to test Spring / React communication
+<details>
+<br>
+
+1. 프론트, 백엔드를 둘 다 실행합니다.
+2. localhost:3000/api/comm-demo로 가면 Spring에서 보낸 정보를 확인할 수 있습니다.
+3. Backend의 HelloController의 return값을 변경한 후 서버를 재시작 (--continuous 옵션 사용시 필요 없음)시 변경되는 내용을 확인할 수 있습니다.
+
 </details>
 
 ## **📝 커밋 컨벤션**
