@@ -1,6 +1,20 @@
 # Copoto
 project copoto
 
+## ** HOW TO START **
+### Frontend
+
+1. Copoto / frontend으로 이동합니다.
+2. npm install
+3. npm start
+
+### Backend
+1. Copoto / backend / project로 이동합니다.
+2. ./gradlew bootRun
+3. 만약 권한이 없다면 chmod +x gradlew 후 실행
+4. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다.
+
+
 ## **📝 커밋 컨벤션**
   
 <details>
