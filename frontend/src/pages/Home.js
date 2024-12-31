@@ -5,7 +5,9 @@ function Home() {
     return (
         <>
             <TopBar />
-            <SampleSidebar />
+            <div className = "pl-[10%]">
+                <SampleSidebar />
+            </div>
         </>
     );
 }
