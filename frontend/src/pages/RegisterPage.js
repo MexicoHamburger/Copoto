@@ -41,6 +41,12 @@ function RegisterPage() {
               required
             />
           </div>
+          <button
+            type="submit"
+            className="w-full p-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600"
+          >
+            회원가입
+          </button>
         </form>
       </div>
     </div>
