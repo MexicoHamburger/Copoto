@@ -25,6 +25,7 @@ MYSQL연동 방법
 1. git clone 또는 git pull origin main 후에 backend/project/src/main/java/resources에 있는 application.properties에 username, password는 본인 MYSQL에 맞게 변경합니다.
 2. 본인 MYSQL에 copoto_db라고 하는 DB를 생성합니다 (create database copoto_db;)
 3. 이후에 backend를 실행합니다.
+**중요** 반드시 깃허브에 올릴 때는 password를 다시 기본으로 바꿔주세요. 추후에 gitignore에 추가할 예정이지만, 안전하게 수행하시길 바랍니다
 
 </details>
 
