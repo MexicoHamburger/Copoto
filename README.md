@@ -28,8 +28,8 @@ MYSQL연동 방법
 **중요** 반드시 깃허브에 올릴 때는 password를 다시 기본으로 바꿔주세요. 추후에 gitignore에 추가할 예정이지만, 안전하게 수행하시길 바랍니다
 
 ### API 테스트 방법
-아래의 문서를 확인하세요
-https://app.gitbook.com/o/RaOavG8H8K1kXqjQ2pHT/s/9BtT5mOQvB23FlaYS7kU/
+서버를 실행한 뒤에 아래의 문서를 확인하세요
+[api 명세서](http://localhost:8080/swagger-ui.html)
 
 </details>
 
