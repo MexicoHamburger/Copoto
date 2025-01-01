@@ -27,6 +27,10 @@ MYSQL연동 방법
 3. 이후에 backend를 실행합니다.
 **중요** 반드시 깃허브에 올릴 때는 password를 다시 기본으로 바꿔주세요. 추후에 gitignore에 추가할 예정이지만, 안전하게 수행하시길 바랍니다
 
+### API 테스트 방법
+아래의 문서를 확인하세요
+
+
 </details>
 
 ## How to test Spring / React communication
