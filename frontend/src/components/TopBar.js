@@ -31,7 +31,7 @@ function TopBar() {
                     Q&A
                 </div>
             </div>
-            <div class="w-[15%] flex items-center border border-gray-300 rounded-3xl px-4 my-3 shadow-sm">
+            <div className ="w-[15%] flex items-center border border-gray-300 rounded-3xl px-4 my-3 shadow-sm">
                 <input
                     type="text"
                     placeholder="Search..."
