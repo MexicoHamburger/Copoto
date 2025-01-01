@@ -21,11 +21,15 @@ SKKU SW 20 Jiho Kim ( Backend )
 3. 만약 권한이 없다면 chmod +x gradlew 후 실행
 4. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다. (이걸 추천)
 
-gradlew문제가 발생할 경우 아래의 과정을 시작하세요
-1. ./gradlew --stop
-2. ./gradlew clean
-3. rm -rf ~/.gradle/caches/
-4. ./gradlew bootRun
+MYSQL연동 방법
+1. git clone 또는 git pull origin main 후에 backend/project/src/main/java/resources에 있는 application.properties에 username, password는 본인 MYSQL에 맞게 변경합니다.
+2. 본인 MYSQL에 copoto_db라고 하는 DB를 생성합니다 (create database copoto_db;)
+3. 이후에 backend를 실행합니다.
+**중요** 반드시 깃허브에 올릴 때는 password를 다시 기본으로 바꿔주세요. 추후에 gitignore에 추가할 예정이지만, 안전하게 수행하시길 바랍니다
+
+### API 테스트 방법
+서버를 실행한 뒤에 아래의 문서를 확인하세요
+[api 명세서](http://localhost:8080/swagger-ui.html)
 
 </details>
 
