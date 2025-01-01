@@ -21,11 +21,10 @@ SKKU SW 20 Jiho Kim ( Backend )
 3. 만약 권한이 없다면 chmod +x gradlew 후 실행
 4. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다. (이걸 추천)
 
-gradlew문제가 발생할 경우 아래의 과정을 시작하세요
-1. ./gradlew --stop
-2. ./gradlew clean
-3. rm -rf ~/.gradle/caches/
-4. ./gradlew bootRun
+MYSQL연동 방법
+1. git clone 또는 git pull origin main 후에 backend/project/src/main/java/resources에 있는 application.properties에 username, password는 본인 MYSQL에 맞게 변경합니다.
+2. 본인 MYSQL에 copoto_db라고 하는 DB를 생성합니다 (create database copoto_db;)
+3. 이후에 backend를 실행합니다.
 
 </details>
 
