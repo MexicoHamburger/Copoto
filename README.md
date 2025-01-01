@@ -29,7 +29,7 @@ MYSQL연동 방법
 
 ### API 테스트 방법
 아래의 문서를 확인하세요
-
+https://app.gitbook.com/o/RaOavG8H8K1kXqjQ2pHT/s/9BtT5mOQvB23FlaYS7kU/
 
 </details>
 
