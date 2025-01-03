@@ -4,7 +4,7 @@ import PagePreview from './PagePreview.js'
 function PageList() {
     
     return (
-        <div className = "pl-[10%] pr-[10%]">
+        <div className = "pt-[75px] pl-[10%] pr-[10%]">
             <div className = "font-bold text-2xl pt-4 pb-4">
                 전체 게시글 보기
             </div>
