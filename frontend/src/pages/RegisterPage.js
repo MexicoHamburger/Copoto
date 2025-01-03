@@ -1,13 +1,28 @@
 import React, { useState } from "react";
+import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 
 function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
+  const postData = {
+    id: username,
+    password: password
+  };
+
+  const gotoLoginPage = () => {
+    navigate('/login');
+  }
   const handleRegister = (e) => {
     e.preventDefault();
-    console.log("Username:", username);
-    console.log("Password:", password);
+
+    axios.post('/api/user/register', postData)
+    .then(response =>  {
+      gotoLoginPage();
+    })
+    .catch(error => console.log(error))
   };
 
   return (

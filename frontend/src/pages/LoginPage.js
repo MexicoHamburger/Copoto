@@ -1,21 +1,34 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  const postData = {
+    id: username,
+    password: password
+  };
+
   const handleLogin = (e) => {
     e.preventDefault();
-    console.log("Username:", username);
-    console.log("Password:", password);
+    
+    axios.post('/api/user/login', postData)
+    .then(response => {
+      gotoMainPage();
+    })
+    .catch(error => console.log(error))
 
-    //이 값을 이용해 db를 업데이트하면 됩니다
   };
 
   const gotoRegisterPage = () => {
     navigate("/register");
+  }
+
+  const gotoMainPage = () => {
+    navigate("/");
   }
 
   return (
