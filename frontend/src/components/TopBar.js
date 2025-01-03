@@ -11,7 +11,7 @@ function TopBar() {
     }
 
     return (
-        <header className = "border-b flex">
+        <header className="border-b flex fixed top-0 left-0 w-full bg-white z-50">
             <div className = "pl-[10%]">
                 <img src={CopotoLogo} alt = "Copoto Logo"
                 className = "max-w-[150px] p-4"/>
