@@ -1,13 +1,14 @@
-# Copoto
+# 🥔COPOTO (Coding Potatoes)
 ### A Corporate Side project + Graduation Project of
-SKKU SW 20 Yongjoon Kwon ( Frontend + a bit of backend )
+🖥SKKU SW 20 Yongjoon Kwon ( Frontend , DevOps )
 <br>
-SKKU SW 20 Seongcheol Kang ( Backend )
+🖥SKKU SW 20 Seongcheol Kang ( Backend )
 <br>
-SKKU SW 20 Jiho Kim ( Backend )
+🖥SKKU SW 20 Jiho Kim ( Backend )
 
-## HOW TO START
+## 프로젝트 시작
 <details>
+<summary>⚙How to start running project </summary>
   
 ### Frontend
 
@@ -17,15 +18,19 @@ SKKU SW 20 Jiho Kim ( Backend )
 
 ### Backend
 1. Copoto / backend / project로 이동합니다.
-2. ./gradlew bootRun
-3. 만약 권한이 없다면 chmod +x gradlew 후 실행
-4. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다. (이걸 추천)
+2. ./gradlew bootRun (주의! application.properties의 내용에 맞게 MySQL 프로필이 설정되어 있어야 합니다.)
+3. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다. (이걸 추천)
 
-MYSQL연동 방법
-1. git clone 또는 git pull origin main 후에 backend/project/src/main/java/resources에 있는 application.properties에 username, password는 본인 MYSQL에 맞게 변경합니다.
-2. 본인 MYSQL에 copoto_db라고 하는 DB를 생성합니다 (create database copoto_db;)
-3. 이후에 backend를 실행합니다.
-**중요** 반드시 깃허브에 올릴 때는 password를 다시 기본으로 바꿔주세요. 추후에 gitignore에 추가할 예정이지만, 안전하게 수행하시길 바랍니다
+### Database(MySQL) 연동 방법
+1. MySQL을 설치합니다. (Windows / Mac은 MySQL Installer 이용, Linux는 sudo apt install mysql-server)
+2. git clone 또는 git pull origin main 후에 backend/project/src/main/java/resources에 있는 application.properties에 username, password는 본인 MYSQL에 맞게 변경합니다.
+3. 본인 MYSQL에 copoto_db라고 하는 DB를 생성합니다 (create database copoto_db;)
+4. 이후에 backend를 실행합니다.
+
+**중요!**
+🔐반드시 깃허브에 올릴 때는 application.properties의 password를 다시 기본으로 바꿔주세요.
+<br/>
+추후에 gitignore에 추가할 예정이지만, 안전하게 수행하시길 바랍니다
 
 ### API 테스트 방법
 서버를 실행한 뒤에 아래의 문서를 확인하세요
@@ -33,8 +38,9 @@ MYSQL연동 방법
 
 </details>
 
-## How to test Spring / React communication
+## 프론트 / 백엔드 통신 점검
 <details>
+<summary>🔗How to test Spring <-> React Communication </summary>
 <br>
 
 1. 프론트, 백엔드를 둘 다 실행합니다.
@@ -99,7 +105,7 @@ git commit -m "[feat](프로젝트이름)#7 - OO기능 개발"
 
 6. 개발 도중 다른 이슈가 병합되었을 가능성이 있기 떄문에, main 브랜치를 한 번 더 pull 해줍니다.
 ```
-git pull origin master
+git pull origin main
 ```
 <br>
 
@@ -121,7 +127,7 @@ git push origin feature/#7
 
 10. main 브랜치로 이동 후 1번 과정부터 다시 반복해줍니다.
 ```
-git switch master
+git switch main
 ```
 <br>
 
