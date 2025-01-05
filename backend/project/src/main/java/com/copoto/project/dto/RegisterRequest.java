@@ -11,6 +11,9 @@ public class RegisterRequest {
     @Schema(description = "비밀번호", example = "password123", required = true)
     private String password;
 
+    @Schema(description = "닉네임", example = "SKKUniv쓲빢빢", required = true)
+    private String nickname;
+
     // Getter and Setter
     public String getId() {
         return id;
@@ -26,5 +29,13 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getNickname(){
+        return nickname;
+    }
+
+    public void setNickname(String nickname){
+        this.nickname=nickname;
     }
 }

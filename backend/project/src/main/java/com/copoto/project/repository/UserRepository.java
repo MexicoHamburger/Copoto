@@ -6,4 +6,6 @@ import com.copoto.project.entity.User;
 
 public interface UserRepository extends JpaRepository<User, String> {
     // 추가 메서드가 필요하면 여기 작성(findall 등)
+
+    boolean existsByNickname(String nickname);
 }

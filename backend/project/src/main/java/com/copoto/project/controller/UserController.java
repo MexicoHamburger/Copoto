@@ -15,7 +15,8 @@ import com.copoto.project.dto.ApiResponseCustom;
 import com.copoto.project.dto.LoginRequest;
 import com.copoto.project.dto.RegisterRequest;
 import com.copoto.project.dto.UserResponse;
-import com.copoto.project.dto.VerifyRequest;
+import com.copoto.project.dto.VerifyIDRequest;
+import com.copoto.project.dto.VerifyNicknameRequest;
 import com.copoto.project.entity.User;
 import com.copoto.project.repository.UserRepository;
 import com.copoto.project.service.UserService;
@@ -52,7 +53,8 @@ public class UserController {
                         "message": "User registered successfully",
                         "data": {
                             "id": "user123",
-                            "password": "hashedPassword",
+                            "password": "Password",
+                            "nickname": "SKKUniv쓲빢",
                             "createdAt": "2023-01-01T12:00:00"
                         }
                     }
@@ -80,14 +82,19 @@ public class UserController {
         if (request.getPassword() == null || request.getPassword().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Password is required", null));
         }
+        if (request.getNickname() == null || request.getNickname().isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Nickname is required", null));
+        }
         User user = new User();
         user.setId(request.getId());
         user.setPassword(request.getPassword());
+        user.setNickname(request.getNickname());
         User registeredUser = userService.register(user);
 
         UserResponse response = new UserResponse();
         response.setId(registeredUser.getId());
         response.setPassword(registeredUser.getPassword());
+        response.setNickname(registeredUser.getNickname());
         response.setCreatedAt(registeredUser.getCreatedAt());
 
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "User registered successfully", response));
@@ -152,7 +159,7 @@ public class UserController {
         }
     }
 
-    @PostMapping("/verify")
+    @PostMapping("/verify/id")
     @Operation(summary = "유저 검증", description = "해당 유저가 존재하는 지 파악합니다.")
     @ApiResponses({
         @ApiResponse(
@@ -195,7 +202,7 @@ public class UserController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<Boolean>> verify(@RequestBody VerifyRequest request) {
+    public ResponseEntity<ApiResponseCustom<Boolean>> verify(@RequestBody VerifyIDRequest request) {
         if (request.getId() == null || request.getId().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "User ID is required", null));
         }
@@ -207,6 +214,63 @@ public class UserController {
             return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, "User does not exist", false));
         }
     }
+
+    @PostMapping("/verify/nickname")
+    @Operation(summary = "닉네임 검증", description = "해당 닉네임이 사용 중인지 확인합니다.")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Nickname is available",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Nickname is available",
+                        "data": true
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Nickname is required",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 400,
+                        "message": "Nickname is required",
+                        "data": null
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "409",
+            description = "Nickname is already in use",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 409,
+                        "message": "Nickname is already in use",
+                        "data": false
+                    }
+                """)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseCustom<Boolean>> verifyNickname(@RequestBody VerifyNicknameRequest request) {
+        if (request.getNickname() == null || request.getNickname().isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Nickname is required", null));
+        }
+
+        boolean exists = userRepository.existsByNickname(request.getNickname());
+        if (exists) {
+            return ResponseEntity.status(409).body(new ApiResponseCustom<>(409, "Nickname is already in use", false));
+        } else {
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Nickname is available", true));
+        }
+    }
+
 
     @GetMapping("/all")
     @Operation(summary = "전체 회원 조회", description = "모든 회원 정보를 반환합니다.")
@@ -223,11 +287,13 @@ public class UserController {
                             {
                                 "id": "user1",
                                 "password": "hashedPassword1",
+                                "nickname": "SKKUniv쓲빢",
                                 "createdAt": "2023-01-01T12:00:00"
                             },
                             {
                                 "id": "user2",
                                 "password": "hashedPassword2",
+                                "nickname": "SKKUniv리메",
                                 "createdAt": "2023-01-02T12:00:00"
                             }
                         ]

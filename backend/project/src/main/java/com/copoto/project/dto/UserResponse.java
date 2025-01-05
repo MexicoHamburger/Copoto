@@ -13,6 +13,9 @@ public class UserResponse {
     @Schema(description = "비밀번호", example = "password123")
     private String password;
 
+    @Schema(description = "닉네임", example = "SKKUniv쓲빢", required = true)
+    private String nickname;
+
     @Schema(description = "생성 일시", example = "2025-01-01T13:11:23.703Z")
     private LocalDateTime createdAt;
 
@@ -39,5 +42,13 @@ public class UserResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getNickname(){
+        return nickname;
+    }
+
+    public void setNickname(String nickname){
+        this.nickname=nickname;
     }
 }
