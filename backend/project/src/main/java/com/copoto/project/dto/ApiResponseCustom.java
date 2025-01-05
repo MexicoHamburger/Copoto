@@ -3,7 +3,7 @@ package com.copoto.project.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "공통 응답 DTO")
-public class ApiResponse<T> {
+public class ApiResponseCustom<T> {
 
     @Schema(description = "HTTP 상태 코드", example = "200")
     private int status;
@@ -14,7 +14,7 @@ public class ApiResponse<T> {
     @Schema(description = "응답 데이터")
     private T data;
 
-    public ApiResponse(int status, String message, T data) {
+    public ApiResponseCustom(int status, String message, T data) {
         this.status = status;
         this.message = message;
         this.data = data;
