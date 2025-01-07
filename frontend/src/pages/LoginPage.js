@@ -5,6 +5,8 @@ import axios from 'axios';
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const postData = {
@@ -15,11 +17,32 @@ function LoginPage() {
   const handleLogin = (e) => {
     e.preventDefault();
     
-    axios.post('/api/user/login', postData)
-    .then(response => {
-      gotoMainPage();
-    })
-    .catch(error => console.log(error))
+    if (username === "") {
+      setHasError(true);
+      setErrorMessage("id를 입력해주세요.");
+    }
+    else if (password === "") {
+      setHasError(true);
+      setErrorMessage("비밀번호를 입력해주세요.");
+    }
+    else {
+      setHasError(false);
+      axios.post('/api/user/login', postData)
+      .then(response => {
+        gotoMainPage();
+      })
+      .catch(error => {
+        if(error.response) {
+          setHasError(true);
+          const errorCode = error.response.status;
+
+          const errors = {
+            401 : "아이디 또는 비밀번호가 잘못되었습니다.",
+          }
+          setErrorMessage(errors[errorCode]);
+        }
+      })
+    }
 
   };
 
@@ -46,7 +69,6 @@ function LoginPage() {
               className="w-full p-2 border border-gray-300 rounded"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
             />
           </div>
           <div className="mb-6">
@@ -59,9 +81,14 @@ function LoginPage() {
               className="w-full p-2 border border-gray-300 rounded"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
           </div>
+          {
+            hasError && (
+            <div className = "text-red-500 mb-4">
+              {errorMessage}
+            </div>
+          )}
           <button
             type="submit"
             className="w-full p-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600"
@@ -73,7 +100,7 @@ function LoginPage() {
               className = "text-m text-center hover:cursor-pointer"
               onClick = {gotoRegisterPage}
             >새로 오셨나요?</h3>
-            <h3 className = "text-m text-center">계정을 잊으셨나요?</h3>
+            <h3 className = "text-m text-center">계정을 잊으셨나요? (미구현)</h3>
           </div>
         </form>
       </div>
