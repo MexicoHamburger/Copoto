@@ -52,26 +52,33 @@ function RegisterPage() {
   }
   /* ID 관련 함수 */
   const verifyID = () => {
-    axios.post(apiRoute + '/verify/id', {id: username})
-    .then(response => {
-      handleError('id', true);
-      setErrorMessage("이미 존재하는 id입니다.")
-    })
-    .catch(error => {
-      if (error.response) {
-        const errorCode = error.response.status;
-        // 이 부분은 좀 api 수정이 필요해보임
-        if (errorCode === 404) {
-          handleError('id', false);
-        } else {
-          handleError('id', true);
-          const errors = {
-            400: "id를 입력하세요.",
+    const idRegex = /^[A-Za-z0-9@$!%*?&]{4,}$/;
+    if (idRegex.test(username)) {
+      axios.post(apiRoute + '/verify/id', {id: username})
+      .then(response => {
+        handleError('id', true);
+        setErrorMessage("이미 존재하는 id입니다.")
+      })
+      .catch(error => {
+        if (error.response) {
+          const errorCode = error.response.status;
+          // 이 부분은 좀 api 수정이 필요해보임
+          if (errorCode === 404) {
+            handleError('id', false);
+          } else {
+            handleError('id', true);
+            const errors = {
+              400: "id를 입력하세요.",
+            }
+            setErrorMessage(errors[errorCode]);
           }
-          setErrorMessage(errors[errorCode]);
         }
-      }
-    })
+      })
+    }
+    else {
+      handleError('id', true);
+      setErrorMessage("id는 4자 이상 및 영문/숫자/특수문자만 가능합니다.");
+    }
   }
 
   /* 비밀번호 관련 함수 */
@@ -110,6 +117,20 @@ function RegisterPage() {
       }
     })
   }
+
+  const verifyErrorMessage = () => {
+    console.log('i am called')
+    if (formErrors["username"]) {
+      console.log('calling id')
+      verifyID();
+    } else if (formErrors["password"]) {
+      console.log('calling pw')
+      verifyPassword();
+    } else if (formErrors["nickname"]) {
+      console.log('calling nn')
+      verifyNickname();
+    }
+  }
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-3xl shadow-md w-full max-w-md">
@@ -125,7 +146,10 @@ function RegisterPage() {
               value={username}
               placeholder="아이디"
               onChange = {(e) => setUsername(e.target.value)}
-              onBlur={verifyID}
+              onBlur={() => {
+                  verifyID();
+                  verifyErrorMessage();
+              }}
               required
             />
             <div className = {`flex w-full p-4 border ${formErrors.password ? "border-2 border-red-500" : "border-gray-300"}`}>
@@ -136,7 +160,10 @@ function RegisterPage() {
                 value={password}
                 placeholder="비밀번호"
                 onChange = {(e) => setPassword(e.target.value)}
-                onBlur={verifyPassword}
+                onBlur={() => {
+                  verifyPassword();
+                  verifyErrorMessage();
+              }}
                 required
               />
               <img src = {eyeIcon} alt = "eye" className = "flex max-w-[25px]" onClick = {togglePasswordVisible} ></img>
@@ -148,7 +175,10 @@ function RegisterPage() {
               value={nickname}
               placeholder="닉네임"
               onChange={(e)=>setNickname(e.target.value)}
-              onBlur={verifyNickname}
+              onBlur={() => {
+                verifyNickname();
+                verifyErrorMessage();
+            }}
               required
             />
           </div>
