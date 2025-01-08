@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.copoto.project.dto.ApiResponseCustom;
-import com.copoto.project.dto.PostRequest;
-import com.copoto.project.dto.PostResponse;
+import com.copoto.project.dto.post.PostRequest;
+import com.copoto.project.dto.post.PostResponse;
 import com.copoto.project.entity.Post;
 import com.copoto.project.entity.User;
 import com.copoto.project.service.PostService;

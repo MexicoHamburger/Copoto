@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/user")
@@ -143,7 +144,7 @@ public class UserController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<String>> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponseCustom<String>> login(@RequestBody LoginRequest request, HttpSession session/* HttpSession 객체 주입 */) {
         if (request.getId() == null || request.getId().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "User ID is required", null));
         }
@@ -153,11 +154,38 @@ public class UserController {
         User loggedInUser = userService.login(request.getId(), request.getPassword());
 
         if (loggedInUser != null) {
+            session.setAttribute("loggedInUser", loggedInUser); //세션에 사용자 정보 저장?
+
+            //인증 토큰 발급 등 추가 로직 (이건 뭐지)
+            //String authToken = "authToken12345";
             return ResponseEntity.ok(new ApiResponseCustom<>(200, "Login successful", "authToken12345"));
         } else {
             return ResponseEntity.status(401).body(new ApiResponseCustom<>(401, "Invalid credentials", null));
         }
     }
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponseCustom<UserResponse>> getUserProfile(HttpSession session /* 세션 객체 */ ) {
+        // 1) 세션에서 사용자 정보 조회
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+
+        // 2) 세션에 유저가 없으면 = 로그인되지 않은 상태
+        if (loggedInUser == null) {
+            return ResponseEntity.status(401)
+                .body(new ApiResponseCustom<>(401, "Not logged in", null));
+        }
+
+        // 3) UserResponse 변환하여 반환
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(loggedInUser.getId());
+        userResponse.setNickname(loggedInUser.getNickname());
+        userResponse.setCreatedAt(loggedInUser.getCreatedAt());
+
+        return ResponseEntity.ok(
+            new ApiResponseCustom<>(200, "User profile found", userResponse)
+        );
+    }
+
 
     @PostMapping("/verify/id")
     @Operation(summary = "유저 검증", description = "해당 유저가 존재하는 지 파악합니다.")
