@@ -1,4 +1,4 @@
-package com.copoto.project.dto;
+package com.copoto.project.dto.post;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

@@ -1,4 +1,4 @@
-package com.copoto.project.dto;
+package com.copoto.project.dto.post;
 
 import java.time.LocalDateTime;
 

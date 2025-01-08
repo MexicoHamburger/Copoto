@@ -22,7 +22,7 @@ public class PostService {
     }
 
     // 특정 게시글 조회 (Read)
-    public Post getPostById(String postId) {
+    public Post getPostById(Long postId) {
         return postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
     }
@@ -33,7 +33,7 @@ public class PostService {
     }
 
     // 게시글 수정 (Update)
-    public Post updatePost(String postId, String newContents) {
+    public Post updatePost(Long postId, String newContents) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
         post.setContents(newContents);
@@ -41,7 +41,7 @@ public class PostService {
     }
 
     // 게시글 삭제 (Delete)
-    public void deletePost(String postId) {
+    public void deletePost(Long postId) {
         if (!postRepository.existsById(postId)) {
             throw new IllegalArgumentException("Post not found");
         }

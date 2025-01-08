@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.copoto.project.dto.ApiResponseCustom;
-import com.copoto.project.dto.PostRequest;
-import com.copoto.project.dto.PostResponse;
+import com.copoto.project.dto.post.PostRequest;
+import com.copoto.project.dto.post.PostResponse;
 import com.copoto.project.entity.Post;
 import com.copoto.project.entity.User;
 import com.copoto.project.service.PostService;
@@ -146,7 +146,7 @@ public class PostController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<PostResponse>> getPostById(@PathVariable String postId) {
+    public ResponseEntity<ApiResponseCustom<PostResponse>> getPostById(@PathVariable Long postId) {
         Post post = postService.getPostById(postId);
         if (post == null) {
             return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, "Post not found", null));
@@ -236,7 +236,7 @@ public class PostController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<PostResponse>> updatePost(@PathVariable String postId, @RequestBody String newContents) {
+    public ResponseEntity<ApiResponseCustom<PostResponse>> updatePost(@PathVariable Long postId, @RequestBody String newContents) {
         Post updatedPost = postService.updatePost(postId, newContents);
 
         PostResponse response = new PostResponse();
@@ -267,7 +267,7 @@ public class PostController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<Void>> deletePost(@PathVariable String postId) {
+    public ResponseEntity<ApiResponseCustom<Void>> deletePost(@PathVariable Long postId) {
         postService.deletePost(postId);
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Post deleted successfully", null));
     }
