@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -177,7 +178,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("/profile")
+    @GetMapping("/profile/{user_id}")
     @Operation(summary = "개인 프로필", description = "현재 로그인되어있는 유저의 프로필을 가져옵니다")
     @ApiResponses({
         @ApiResponse(
@@ -189,10 +190,10 @@ public class UserController {
                             "status": 200,
                             "message": "User profile found",
                             "data": {
-                                "id": "sc9335",
-                                "password": null,
-                                "nickname": "곰수팍",
-                                "createdAt": "2025-01-08T23:35:36.263845"
+                                "id": "kangsc9336",
+                                "password": "gomsupak12!",
+                                "nickname": "곰수팍젤리존맛",
+                                "createdAt": "2025-01-09T15:43:17.402514"
                             }
                         }
                     """)
@@ -212,22 +213,41 @@ public class UserController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<UserResponse>> getUserProfile(HttpSession session /* 세션 객체 */ ) {
+    public ResponseEntity<ApiResponseCustom<UserResponse>> getUserProfile(HttpSession session, /* 세션 객체 */ @PathVariable("user_id") String id) {
         // 1) 세션에서 사용자 정보 조회
         User loggedInUser = (User) session.getAttribute("loggedInUser");
 
-        // 2) 세션에 유저가 없으면 = 로그인되지 않은 상태
-        if (loggedInUser == null) {
-            return ResponseEntity.status(401)
-                .body(new ApiResponseCustom<>(401, "Not logged in", null));
-        }
-
-        // 3) UserResponse 변환하여 반환
         UserResponse userResponse = new UserResponse();
-        userResponse.setId(loggedInUser.getId());
-        userResponse.setNickname(loggedInUser.getNickname());
-        userResponse.setCreatedAt(loggedInUser.getCreatedAt());
-
+        // 이제 해당 아이디의 유저를 찾자
+        //boolean exists = userRepository.existsById(id);
+        try{
+            User target_user = userService.getUserById(id);
+            //System.out.println(id==loggedInUser.getId());
+            //여기부터는 찾으려는 유저가 존재한다는 거임임
+            
+            // 2) 현재 세션의 유저가 요청한 주소의 user_id와 동일한지 - 이것만 모든 정보를 보여줄 수 있는 경우, 나머지는 싹다 제한적인 정보 ㅇㅇㅇ
+            if (loggedInUser!=null && loggedInUser.getId().equals(id)) { //tlqkf 그냥 == 으로 안되는 거였노
+                // 3-1) 본인이 본인 정보 조회 :  UserResponse 변환하여 반환
+                //System.out.println("로그인 되어있음음");
+                userResponse.setId(loggedInUser.getId());
+                userResponse.setNickname(loggedInUser.getNickname());
+                userResponse.setPassword(loggedInUser.getPassword());
+                userResponse.setCreatedAt(loggedInUser.getCreatedAt());
+            }
+            
+            else{ //타인의 정보를 조회하는거임임
+                //System.out.println("로그인 안되어있음");
+                //userResponse.setId(loggedInUser.getId()); //보통 게시판에서 타인의 닉네임이 아니라 id도 아나? 아닐걸?
+                userResponse.setNickname(target_user.getNickname());
+                //userResponse.setPassword(loggedInUser.getPassword());
+                userResponse.setCreatedAt(target_user.getCreatedAt());
+            }
+        } catch(IllegalArgumentException e){// 프로필 조회하려는 ID가 없어 - userService의 getUserById에서 error뱉어 
+            return ResponseEntity.status(401)
+               .body(new ApiResponseCustom<>(401, "User not found with ID", null));
+        }
+        
+        
         return ResponseEntity.ok(
             new ApiResponseCustom<>(200, "User profile found", userResponse)
         );
@@ -396,6 +416,7 @@ public class UserController {
                 UserResponse response = new UserResponse();
                 response.setId(user.getId());
                 response.setPassword(user.getPassword());
+                response.setNickname(user.getNickname());
                 response.setCreatedAt(user.getCreatedAt());
                 return response;
             }).toList();
