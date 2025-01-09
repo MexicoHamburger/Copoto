@@ -121,13 +121,10 @@ function RegisterPage() {
   const verifyErrorMessage = () => {
     console.log('i am called')
     if (formErrors["username"]) {
-      console.log('calling id')
       verifyID();
     } else if (formErrors["password"]) {
-      console.log('calling pw')
       verifyPassword();
     } else if (formErrors["nickname"]) {
-      console.log('calling nn')
       verifyNickname();
     }
   }
