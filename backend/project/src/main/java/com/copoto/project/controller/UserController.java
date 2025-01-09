@@ -74,6 +74,19 @@ public class UserController {
                     }
                 """)
             )
+        ),
+        @ApiResponse(
+            responseCode = "501",
+            description = "User ID is already in used",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 500,
+                        "message": "User ID is already in used",
+                        "data": null
+                    }
+                """)
+            )
         )
     })
     public ResponseEntity<ApiResponseCustom<UserResponse>> register(@RequestBody RegisterRequest request) {
@@ -165,6 +178,40 @@ public class UserController {
     }
 
     @GetMapping("/profile")
+    @Operation(summary = "개인 프로필", description = "현재 로그인되어있는 유저의 프로필을 가져옵니다")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "User profile found",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                        {
+                            "status": 200,
+                            "message": "User profile found",
+                            "data": {
+                                "id": "sc9335",
+                                "password": null,
+                                "nickname": "곰수팍",
+                                "createdAt": "2025-01-08T23:35:36.263845"
+                            }
+                        }
+                    """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Not logged in",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 401,
+                        "message": "Not logged in",
+                        "data": null
+                    }
+                """)
+            )
+        )
+    })
     public ResponseEntity<ApiResponseCustom<UserResponse>> getUserProfile(HttpSession session /* 세션 객체 */ ) {
         // 1) 세션에서 사용자 정보 조회
         User loggedInUser = (User) session.getAttribute("loggedInUser");
