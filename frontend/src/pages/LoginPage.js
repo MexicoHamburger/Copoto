@@ -29,6 +29,8 @@ function LoginPage() {
       setHasError(false);
       axios.post('/api/user/login', postData)
       .then(response => {
+        //일시적으로 localStorage에 토큰을 저장
+        window.localStorage.setItem("token", "response.data.data");
         gotoMainPage();
       })
       .catch(error => {
