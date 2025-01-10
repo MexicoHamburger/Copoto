@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -70,6 +72,19 @@ public class UserController {
                     {
                         "status": 400,
                         "message": "User ID or Password is required",
+                        "data": null
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "501",
+            description = "User ID is already in used",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 500,
+                        "message": "User ID is already in used",
                         "data": null
                     }
                 """)
@@ -144,43 +159,141 @@ public class UserController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<String>> login(@RequestBody LoginRequest request, HttpSession session/* HttpSession 객체 주입 */) {
-        if (request.getId() == null || request.getId().isEmpty()) {
+    public ResponseEntity<ApiResponseCustom<String>> login(@RequestBody LoginRequest loginRequest, HttpServletRequest httpServletRequest) { //매개변수를 추가해줘야 한다고 한다.... 찾아본 블로그에는 그딴 거 없는데 왜지
+        //근데 http servlet을 쓸 것이라 명시용으로도 한다고 한다... 
+        if (loginRequest.getId() == null || loginRequest.getId().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "User ID is required", null));
         }
-        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+        if (loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Password is required", null));
         }
-        User loggedInUser = userService.login(request.getId(), request.getPassword());
+        User loggedInUser = userService.login(loginRequest.getId(), loginRequest.getPassword());
 
         if (loggedInUser != null) {
+            httpServletRequest.getSession().invalidate(); //기존의 세션 파기
+            HttpSession session = httpServletRequest.getSession(true); //session이 없다면 새롭게 생성
             session.setAttribute("loggedInUser", loggedInUser); //세션에 사용자 정보 저장?
+            session.setMaxInactiveInterval(600); // Session이 10분동안 유지
 
             //인증 토큰 발급 등 추가 로직 (이건 뭐지)
-            //String authToken = "authToken12345";
-            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Login successful", "authToken12345"));
+            String authToken = "random";
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Login successful", authToken));
         } else {
             return ResponseEntity.status(401).body(new ApiResponseCustom<>(401, "Invalid credentials", null));
         }
     }
 
-    @GetMapping("/profile")
-    public ResponseEntity<ApiResponseCustom<UserResponse>> getUserProfile(HttpSession session /* 세션 객체 */ ) {
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "현재 세션을 없애 로그아웃 기능을 제공합니다.")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Logout successful",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Logout successful",
+                        "data": null
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "already no session",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 400,
+                        "message": "already no session",
+                        "data": null
+                    }
+                """)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseCustom<String>> logout(HttpServletRequest httpServletRequest) { //매개변수를 추가해줘야 한다고 한다.... 찾아본 블로그에는 그딴 거 없는데 왜지
+       // 새로 생성하지 않는 조건(false)로 세션을 조회한다
+        HttpSession session = httpServletRequest.getSession(false);
+        if(session!=null){
+            session.invalidate(); //세션 파기
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Logout successful", null));
+        } else {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "already no session", null));
+        }
+    }
+
+    @GetMapping("/profile/{user_id}")
+    @Operation(summary = "개인 프로필", description = "현재 로그인되어있는 유저의 프로필을 가져옵니다")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "User profile found",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                        {
+                            "status": 200,
+                            "message": "User profile found",
+                            "data": {
+                                "id": "kangsc9336",
+                                "password": "gomsupak12!",
+                                "nickname": "곰수팍젤리존맛",
+                                "createdAt": "2025-01-09T15:43:17.402514"
+                            }
+                        }
+                    """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Not logged in",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 401,
+                        "message": "Not logged in",
+                        "data": null
+                    }
+                """)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseCustom<UserResponse>> getUserProfile(HttpSession session, /* 세션 객체 */ @PathVariable("user_id") String id) {
         // 1) 세션에서 사용자 정보 조회
         User loggedInUser = (User) session.getAttribute("loggedInUser");
 
-        // 2) 세션에 유저가 없으면 = 로그인되지 않은 상태
-        if (loggedInUser == null) {
-            return ResponseEntity.status(401)
-                .body(new ApiResponseCustom<>(401, "Not logged in", null));
-        }
-
-        // 3) UserResponse 변환하여 반환
         UserResponse userResponse = new UserResponse();
-        userResponse.setId(loggedInUser.getId());
-        userResponse.setNickname(loggedInUser.getNickname());
-        userResponse.setCreatedAt(loggedInUser.getCreatedAt());
-
+        // 이제 해당 아이디의 유저를 찾자
+        //boolean exists = userRepository.existsById(id);
+        try{
+            User target_user = userService.getUserById(id);
+            //System.out.println(id==loggedInUser.getId());
+            //여기부터는 찾으려는 유저가 존재한다는 거임임
+            
+            // 2) 현재 세션의 유저가 요청한 주소의 user_id와 동일한지 - 이것만 모든 정보를 보여줄 수 있는 경우, 나머지는 싹다 제한적인 정보 ㅇㅇㅇ
+            if (loggedInUser!=null && loggedInUser.getId().equals(id)) { //tlqkf 그냥 == 으로 안되는 거였노
+                // 3-1) 본인이 본인 정보 조회 :  UserResponse 변환하여 반환
+                //System.out.println("로그인 되어있음음");
+                userResponse.setId(loggedInUser.getId());
+                userResponse.setNickname(loggedInUser.getNickname());
+                userResponse.setPassword(loggedInUser.getPassword());
+                userResponse.setCreatedAt(loggedInUser.getCreatedAt());
+            }
+            
+            else{ //타인의 정보를 조회하는거임임
+                //System.out.println("로그인 안되어있음");
+                //userResponse.setId(loggedInUser.getId()); //보통 게시판에서 타인의 닉네임이 아니라 id도 아나? 아닐걸?
+                userResponse.setNickname(target_user.getNickname());
+                //userResponse.setPassword(loggedInUser.getPassword());
+                userResponse.setCreatedAt(target_user.getCreatedAt());
+            }
+        } catch(IllegalArgumentException e){// 프로필 조회하려는 ID가 없어 - userService의 getUserById에서 error뱉어 
+            return ResponseEntity.status(401)
+               .body(new ApiResponseCustom<>(401, "User not found with ID", null));
+        }
+        
+        
         return ResponseEntity.ok(
             new ApiResponseCustom<>(200, "User profile found", userResponse)
         );
@@ -349,6 +462,7 @@ public class UserController {
                 UserResponse response = new UserResponse();
                 response.setId(user.getId());
                 response.setPassword(user.getPassword());
+                response.setNickname(user.getNickname());
                 response.setCreatedAt(user.getCreatedAt());
                 return response;
             }).toList();

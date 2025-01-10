@@ -19,7 +19,7 @@
 ### Backend
 1. Copoto / backend / project로 이동합니다.
 2. ./gradlew bootRun (주의! application.properties의 내용에 맞게 MySQL 프로필이 설정되어 있어야 합니다.)
-3. ./gradlew bootRun --continuous를 하면 java가 수정될때마다 자동으로 application context가 재실행됩니다. (이걸 추천)
+3. 터미널 창을 두개 열고, 하나는 ./gradlew build --continuous를, 다른 하나는 ./gradlew bootrun을 하면 수정될때마다 자동으로 서버가 재실행됩니다. (이걸 추천)
 
 ### Database(MySQL) 연동 방법
 1. MySQL을 설치합니다. (Windows / Mac은 MySQL Installer 이용, Linux는 sudo apt install mysql-server)
