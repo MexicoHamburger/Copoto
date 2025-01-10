@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -158,23 +159,68 @@ public class UserController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<String>> login(@RequestBody LoginRequest request, HttpSession session/* HttpSession 객체 주입 */) {
-        if (request.getId() == null || request.getId().isEmpty()) {
+    public ResponseEntity<ApiResponseCustom<String>> login(@RequestBody LoginRequest loginRequest, HttpServletRequest httpServletRequest) { //매개변수를 추가해줘야 한다고 한다.... 찾아본 블로그에는 그딴 거 없는데 왜지
+        //근데 http servlet을 쓸 것이라 명시용으로도 한다고 한다... 
+        if (loginRequest.getId() == null || loginRequest.getId().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "User ID is required", null));
         }
-        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+        if (loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Password is required", null));
         }
-        User loggedInUser = userService.login(request.getId(), request.getPassword());
+        User loggedInUser = userService.login(loginRequest.getId(), loginRequest.getPassword());
 
         if (loggedInUser != null) {
+            httpServletRequest.getSession().invalidate(); //기존의 세션 파기
+            HttpSession session = httpServletRequest.getSession(true); //session이 없다면 새롭게 생성
             session.setAttribute("loggedInUser", loggedInUser); //세션에 사용자 정보 저장?
+            session.setMaxInactiveInterval(600); // Session이 10분동안 유지
 
             //인증 토큰 발급 등 추가 로직 (이건 뭐지)
-            //String authToken = "authToken12345";
-            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Login successful", "authToken12345"));
+            String authToken = "random";
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Login successful", authToken));
         } else {
             return ResponseEntity.status(401).body(new ApiResponseCustom<>(401, "Invalid credentials", null));
+        }
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "현재 세션을 없애 로그아웃 기능을 제공합니다.")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Logout successful",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Logout successful",
+                        "data": null
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "already no session",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 400,
+                        "message": "already no session",
+                        "data": null
+                    }
+                """)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseCustom<String>> logout(HttpServletRequest httpServletRequest) { //매개변수를 추가해줘야 한다고 한다.... 찾아본 블로그에는 그딴 거 없는데 왜지
+       // 새로 생성하지 않는 조건(false)로 세션을 조회한다
+        HttpSession session = httpServletRequest.getSession(false);
+        if(session!=null){
+            session.invalidate(); //세션 파기
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Logout successful", null));
+        } else {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "already no session", null));
         }
     }
 
