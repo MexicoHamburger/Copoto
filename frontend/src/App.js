@@ -1,20 +1,38 @@
 import './index.css'
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams } from "react-router";
+import TopBar from './components/TopBar'
 import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import CommDemoPage from './pages/CommDemoPage'
+import PageList from './components/PostList'
+import NotFound from './pages/NotFound'
+
+function DashboardRoutes() {
+  const validDashboards = ['notice', 'free', 'qna']; 
+  const { dashboard } = useParams(); 
+  if (!validDashboards.includes(dashboard)) {
+    return <NotFound />;
+  }
+  return <PageList />; 
+}
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+
+        <Route element={<TopBar />}>
+          <Route path="/" element={<Home />} />
+          <Route path="dashboards/:dashboard" element={<DashboardRoutes />} />
+        </Route>
         <Route path="/api/comm-demo" element={<CommDemoPage />} />
+
+        <Route path = "*" element = {<NotFound />}></Route>
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 
