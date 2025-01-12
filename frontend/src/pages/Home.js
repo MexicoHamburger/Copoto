@@ -1,10 +1,7 @@
-import TopBar from "../components/TopBar.js"
-import PageList from "../components/PageList.js"
-
+import PageList from "../components/PostList.js"
 function Home() {
     return (
         <>
-            <TopBar />
             <PageList />
         </>
     );
