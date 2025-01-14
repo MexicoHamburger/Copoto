@@ -74,7 +74,9 @@ function TopBar() {
                     )}
                 </div>
             </header>
-            <Outlet />
+            <div className = "pt-[75px] pl-[10%] pr-[10%]">
+                <Outlet />
+            </div>
         </>
     )
 }
