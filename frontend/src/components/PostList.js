@@ -1,22 +1,22 @@
 import postlist from '../temp/itemsFromDB.json'
 import PagePreview from './PagePreview.js'
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 function PostList() {
     const params = useParams();
     const dashboard = params.dashboard;
+    const navigate = useNavigate();
 
     return (
-        <div className="pt-[75px] pl-[10%] pr-[10%]">
+        <div>
             <div className="flex items-center justify-between">
-                {/* 왼쪽: 전체 게시글 보기 */}
                 <div className="font-bold text-2xl pt-4 pb-4">
                     전체 게시글 보기
                 </div>
 
-                {/* 오른쪽: 로그인 버튼 */}
                 {dashboard ? <button
                     className="w-auto p-2 h-auto bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600"
+                    onClick={() => { navigate(`/createpost?boardType=${dashboard}`) }}
                 >
                     게시글 작성
                 </button> : <></>}
