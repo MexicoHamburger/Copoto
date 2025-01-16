@@ -7,6 +7,15 @@ function PostList() {
     const dashboard = params.dashboard;
     const navigate = useNavigate();
 
+    const handleWritePost = () => {
+        const isLoggedIn = window.localStorage.getItem("token") ? true : false;
+        if (isLoggedIn) {
+            navigate(`/createpost?boardType=${dashboard}`)
+        } else {
+            window.localStorage.setItem("afterLogin", `/createpost?boardType=${dashboard}`);
+            navigate('/login');
+        }
+    }
     return (
         <div>
             <div className="flex items-center justify-between">
@@ -16,7 +25,9 @@ function PostList() {
 
                 {dashboard ? <button
                     className="w-auto p-2 h-auto bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600"
-                    onClick={() => { navigate(`/createpost?boardType=${dashboard}`) }}
+                    onClick={() => {
+                        handleWritePost();
+                    }}
                 >
                     게시글 작성
                 </button> : <></>}

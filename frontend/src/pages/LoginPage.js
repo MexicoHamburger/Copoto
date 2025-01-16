@@ -31,7 +31,11 @@ function LoginPage() {
       .then(response => {
         //일시적으로 localStorage에 토큰을 저장
         window.localStorage.setItem("token", "response.data.data");
-        gotoMainPage();
+
+        //temporary storage. userid는 localstorage에 안 넣는편이 좋을듯
+        window.localStorage.setItem("userid", username);
+        const toGo = window.localStorage.getItem("afterLogin") || "/";
+        navigate(toGo);
       })
       .catch(error => {
         if(error.response) {
@@ -47,14 +51,6 @@ function LoginPage() {
     }
 
   };
-
-  const gotoRegisterPage = () => {
-    navigate("/register");
-  }
-
-  const gotoMainPage = () => {
-    navigate("/");
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -100,7 +96,7 @@ function LoginPage() {
           <div className = "flex justify-between mt-4">
             <h3 
               className = "text-m text-center hover:cursor-pointer"
-              onClick = {gotoRegisterPage}
+              onClick = {() => navigate("/register")}
             >새로 오셨나요?</h3>
             <h3 className = "text-m text-center">계정을 잊으셨나요? (미구현)</h3>
           </div>
