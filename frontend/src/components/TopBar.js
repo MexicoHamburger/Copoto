@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import CopotoLogo from "../images/copotoLogo.png";
-import { useNavigate, Outlet } from "react-router";
+import { useNavigate, Outlet, useLocation } from "react-router";
 
 function TopBar() {
     const [hasToken, setHasToken] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
     const handleLogout = () => {
         window.localStorage.clear();
         setHasToken(false);
@@ -59,7 +60,11 @@ function TopBar() {
                     ) : (
                         <>
                             <button
-                                onClick={() => navigate('/login')}
+                                onClick={() => {
+                                    const currentPage = location.pathname + location.search;
+                                    window.localStorage.setItem("afterLogin", currentPage);
+                                    navigate('/login')
+                                }}
                                 className="w-20 p-2 h-1/2 bg-blue-500 text-white text-xs font-bold rounded-3xl hover:bg-blue-600"
                             >
                                 로그인
