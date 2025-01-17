@@ -1,11 +1,24 @@
-import postlist from '../temp/itemsFromDB.json'
 import PagePreview from './PagePreview.js'
 import { useNavigate, useParams } from "react-router";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function PostList() {
+    const [postlist, setPostlist] = useState([])
     const params = useParams();
     const dashboard = params.dashboard;
     const navigate = useNavigate();
+
+    useEffect(() => {
+        axios.get('/api/post/all')
+        .then(response => {
+            setPostlist(response.data.data)
+            console.log(`setting with ${response.data.data}`)
+        })
+        .catch(error => {
+    
+        })
+    }, []);
 
     const handleWritePost = () => {
         const isLoggedIn = window.localStorage.getItem("token") ? true : false;

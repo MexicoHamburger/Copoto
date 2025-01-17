@@ -1,11 +1,45 @@
-// import { useSearchParams } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
+import axios from 'axios';
+import { useState } from 'react';
 
 function CreatePostPage() {
-    // const [searchParams] = useSearchParams();
-    // const boardType = searchParams.get("boardType"); // 쿼리에서 데이터 읽기
+    const [searchParams] = useSearchParams();
+    const boardType = searchParams.get("boardType"); // 쿼리에서 데이터 읽기
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const navigate = useNavigate();
 
-    const handlePost = () => {
-        
+    const handleTitleBlur = (e) => {
+        setTitle(e.target.value);
+    };
+
+    const handleContentBlur = (e) => {
+        setContent(e.target.value);
+    };
+
+    const handlePost = (e) => {
+        e.preventDefault();
+        if (title === "") {
+            alert("제목을 입력해주세요.")
+        }
+        else if (content === "") {
+            alert("내용을 입력해주세요.")
+        }
+        else {
+            const postData = {
+                "title":title,
+                "contents":content,
+                "userId":window.localStorage.getItem("userid")
+            };
+            console.log(postData)
+            axios.post('/api/post/create', postData)
+            .then( response => {
+                navigate(`/dashboards/${boardType}`)
+            })
+            .catch(error => {
+                console.log('something is wrong! umm.. this should not happen..')
+            })
+        }
     }
 
     return (
@@ -13,8 +47,12 @@ function CreatePostPage() {
             <h1 className="text-3xl">게시글 작성</h1>
 
             <form onSubmit={handlePost}>
-                <input type="text" placeholder="제목을 입력해주세요." className="w-full h-10 border border-gray-300 rounded-lg mt-5 p-3" />
-                <textarea type="text" placeholder="내용을 입력해주세요." className="w-full h-[300px] border border-gray-300 text-left align-top rounded-lg mt-3 p-3" />
+                <input type="text" placeholder="제목을 입력해주세요."
+                    className="w-full h-10 border border-gray-300 rounded-lg mt-5 p-3"
+                    onBlur={(e) => { handleTitleBlur(e) }} />
+                <textarea type="text" placeholder="내용을 입력해주세요."
+                    className="w-full h-[300px] border border-gray-300 text-left align-top rounded-lg mt-3 p-3"
+                    onBlur={(e) => { handleContentBlur(e) }} />
                 <div className="flex">
                     <button
                         //구현필요
