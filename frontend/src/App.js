@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage'
 import CommDemoPage from './pages/CommDemoPage'
 import PageList from './components/PostList'
 import NotFound from './pages/NotFound'
+import ViewPostPage from './pages/viewPostPage';
 import CreatePostPage from './pages/createPostPage';
 
 function DashboardRoutes() {
@@ -29,10 +30,12 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="dashboards/:dashboard" element={<DashboardRoutes />} />
           <Route path ="createpost" element={<CreatePostPage />} />
+          <Route path ="/pages/:pageId" element={<ViewPostPage />} />
         </Route>
         <Route path="/api/comm-demo" element={<CommDemoPage />} />
 
         <Route path = "*" element = {<NotFound />}></Route>
+        <Route path ="/404" element = {<NotFound />}></Route>
       </Routes>
     </BrowserRouter>
   );
