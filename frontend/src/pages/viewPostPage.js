@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router";
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import parseDate from '../util/parseDate';
 function ViewPostPage() {
     const [title, setTitle] = useState("");
     const [contents, setContents] = useState("");
@@ -9,30 +10,16 @@ function ViewPostPage() {
     const params = useParams();
     const navigate = useNavigate();
 
-    function parseAndSetCreatedAt(createdAt) {
-        const date = new Date(createdAt);
-        const year = date.getFullYear();
-        let month = date.getMonth() + 1;
-        if (month < 10) {
-            month = `0${month}`;
-        }
-
-        const day = date.getDate();
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
-
-        setCreatedAt(`${year}.${month}.${day} ${hours}:${minutes}`);
-    }
-
     useEffect(() => {
         axios.get(`/api/post/${params.pageId}`)
             .then(response => {
                 setTitle(response.data.data.title);
                 setContents(response.data.data.contents);
-                parseAndSetCreatedAt(response.data.data.createdAt);
+                setCreatedAt(parseDate(response.data.data.createdAt));
                 setUsername(response.data.data.userId);
             })
             .catch(error => {
+                console.log(error)
                 navigate('/404');
             })
     }, [params.pageId, navigate]);

@@ -49,14 +49,22 @@ function TopBar() {
                         className="outline-none w-full text-gray-700 placeholder-gray-400"
                     />
                 </div>
-                <div className="ml-[2%] w-[10%] flex items-center">
+                <div className="ml-[2%] w-[20%] flex items-center">
                     {hasToken ? (
-                        <button
-                            onClick={handleLogout}
-                            className="w-20 ml-5 p-2 h-1/2 bg-gray-200 text-blue-500 text-xs font-bold rounded-3xl hover:bg-gray-300"
-                        >
-                            로그아웃
-                        </button>
+                        <>
+                            <button
+                                onClick={handleLogout}
+                                className="w-20 ml-5 p-2 h-1/2 bg-gray-200 text-blue-500 text-xs font-bold rounded-3xl hover:bg-gray-300"
+                            >
+                                로그아웃
+                            </button>
+                            <button
+                                onClick={() => navigate("/profile")}
+                                className="w-30 ml-5 p-2 h-1/2 bg-blue-500 text-white text-xs font-bold rounded-3xl hover:bg-blue-600"
+                            >
+                                회원 정보 보기
+                            </button>
+                        </>
                     ) : (
                         <>
                             <button
@@ -79,7 +87,7 @@ function TopBar() {
                     )}
                 </div>
             </header>
-            <div className = "pt-[75px] pl-[10%] pr-[10%]">
+            <div className="pt-[75px] pl-[10%] pr-[10%]">
                 <Outlet />
             </div>
         </>
