@@ -9,6 +9,7 @@ import PageList from './components/PostList'
 import NotFound from './pages/NotFound'
 import ViewPostPage from './pages/viewPostPage';
 import CreatePostPage from './pages/createPostPage';
+import ViewProfilePage from './pages/viewProfilePage';
 
 function DashboardRoutes() {
   const validDashboards = ['notice', 'free', 'qna']; 
@@ -31,6 +32,7 @@ function App() {
           <Route path="dashboards/:dashboard" element={<DashboardRoutes />} />
           <Route path ="createpost" element={<CreatePostPage />} />
           <Route path ="/pages/:pageId" element={<ViewPostPage />} />
+          <Route path = "/profile" element={<ViewProfilePage />} />
         </Route>
         <Route path="/api/comm-demo" element={<CommDemoPage />} />
 
