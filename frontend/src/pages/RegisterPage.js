@@ -127,10 +127,13 @@ function RegisterPage() {
     console.log(formErrors)
     if (formErrors["username"]) {
       verifyID();
+      console.log('id')
     } else if (formErrors["password"]) {
       verifyPassword();
+      console.log('pw')
     } else if (formErrors["nickname"]) {
       verifyNickname();
+      console.log('nn')
     }
   }
 
@@ -154,7 +157,7 @@ function RegisterPage() {
     if (type === "nickname") {
       if (password && nickname) return "border-t-0 border-red-500";
       if (!password && nickname) return "border-red-500";
-      if (!nickname) return "border-b-0 border-gray-300"
+      if (!nickname) return "border-gray-300"
     }
     // Default class, but should not happen
     return "border-gray-300";
