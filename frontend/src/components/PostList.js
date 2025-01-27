@@ -19,6 +19,7 @@ function PostList() {
     
         })
     }, []);
+    //console.log(postlist); // id 배열 출력
 
     const handleWritePost = () => {
         const isLoggedIn = window.localStorage.getItem("token") ? true : false;
@@ -49,7 +50,7 @@ function PostList() {
                 {postlist.filter((page) => !dashboard || page.type === dashboard).length > 0 ? (
                     postlist
                         .filter((page) => !dashboard || page.type === dashboard)
-                        .map((page) => <PagePreview key={page.id} page={page} />)
+                        .map((page) => <PagePreview key={page.postId} page={page} />)
                 ) : (
                     <p>해당 유형의 게시글이 없습니다.</p>
                 )}
