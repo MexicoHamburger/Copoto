@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "start:all": "concurrently \"cd frontend && npm start\" \"cd backend/project && ./gradlew build --continuous\" \"cd backend/project && ./gradlew bootRun\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
   "dependencies": {
     "axios": "^1.7.9"
   }
