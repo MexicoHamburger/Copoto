@@ -9,23 +9,16 @@
 ## 프로젝트 시작
 <details>
 <summary>⚙How to start running project </summary>
-  
-### Frontend
 
-1. Copoto / frontend으로 이동합니다.
-2. npm install
-3. npm start
-
-### Backend
-1. Copoto / backend / project로 이동합니다.
-2. ./gradlew bootRun (주의! application.properties의 내용에 맞게 MySQL 프로필이 설정되어 있어야 합니다.)
-3. 터미널 창을 두개 열고, 하나는 ./gradlew build --continuous를, 다른 하나는 ./gradlew bootrun을 하면 수정될때마다 자동으로 서버가 재실행됩니다. (이걸 추천)
+1. npm install
+2. MySQL profile 시작
+3. Copoto directory에서 npm run start:all
 
 ### Database(MySQL) 연동 방법
 1. MySQL을 설치합니다. (Windows / Mac은 MySQL Installer 이용, Linux는 sudo apt install mysql-server)
 2. git clone 또는 git pull origin main 후에 backend/project/src/main/java/resources에 있는 application.properties에 username, password는 본인 MYSQL에 맞게 변경합니다.
 3. 본인 MYSQL에 copoto_db라고 하는 DB를 생성합니다 (create database copoto_db;)
-4. 이후에 backend를 실행합니다.
+4. 이후에 전체 코드를 실행합니다.
 
 **중요!**
 🔐반드시 깃허브에 올릴 때는 application.properties의 password를 다시 기본으로 바꿔주세요.
