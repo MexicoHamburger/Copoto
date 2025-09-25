@@ -1,0 +1,7 @@
+transformers>=4.28.0
+peft>=0.3.0
+torch>=1.13.0
+pandas
+scikit-learn
+datasets
+accelerate
