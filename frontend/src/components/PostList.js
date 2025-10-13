@@ -11,13 +11,13 @@ function PostList() {
 
     useEffect(() => {
         axios.get('/api/post/all')
-        .then(response => {
-            setPostlist(response.data.data)
-            console.log(`setting with ${response.data.data}`)
-        })
-        .catch(error => {
-    
-        })
+            .then(response => {
+                setPostlist(response.data.data)
+                console.log(`setting with ${response.data.data}`)
+            })
+            .catch(error => {
+
+            })
     }, []);
     //console.log(postlist); // id 배열 출력
 
@@ -30,6 +30,15 @@ function PostList() {
             navigate('/login');
         }
     }
+
+    const filtered = postlist.filter(page => !dashboard || page.type === dashboard);
+    const sorted = filtered
+        .slice()
+        .sort((a, b) => {
+            const ta = new Date(a?.createdAt || 0).getTime();
+            const tb = new Date(b?.createdAt || 0).getTime();
+            return tb - ta; // 최신이 위로
+        });
     return (
         <div>
             <div className="flex items-center justify-between">
@@ -37,20 +46,18 @@ function PostList() {
                     전체 게시글 보기
                 </div>
 
-                {dashboard ? <button
-                    className="w-auto p-2 h-auto bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600"
-                    onClick={() => {
-                        handleWritePost();
-                    }}
-                >
-                    게시글 작성
-                </button> : <></>}
+                {dashboard ? (
+                    <button
+                        className="w-auto p-2 h-auto bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600"
+                        onClick={handleWritePost}
+                    >
+                        게시글 작성
+                    </button>
+                ) : null}
             </div>
             <div className="pr-[0%]">
-                {postlist.filter((page) => !dashboard || page.type === dashboard).length > 0 ? (
-                    postlist
-                        .filter((page) => !dashboard || page.type === dashboard)
-                        .map((page) => <PagePreview key={page.postId} page={page} />)
+                {sorted.length > 0 ? (
+                    sorted.map(page => <PagePreview key={page.postId} page={page} />)
                 ) : (
                     <p>해당 유형의 게시글이 없습니다.</p>
                 )}
