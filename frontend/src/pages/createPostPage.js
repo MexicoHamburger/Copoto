@@ -8,6 +8,7 @@ function CreatePostPage() {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const navigate = useNavigate();
+    const [showBadModal, setShowBadModal] = useState(false);
 
     const handleTitleBlur = (e) => {
         setTitle(e.target.value);
@@ -37,6 +38,10 @@ function CreatePostPage() {
                     navigate(`/dashboards/${boardType}`)
                 })
                 .catch(error => {
+                    if (axios.isAxiosError(error) && error.response?.status === 403) {
+                        setShowBadModal(true);
+                        return;
+                    }
                     console.log('something is wrong! umm.. this should not happen..')
                 })
         }
@@ -93,6 +98,22 @@ function CreatePostPage() {
                     게시글 작성
                 </button>
             </div>
+            {showBadModal && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-lg">
+                        <h2 className="text-lg font-bold mb-3">알림</h2>
+                        <p className="text-sm text-gray-700 mb-5">부적절한 표현이 감지되었습니다.</p>
+                        <div className="text-right">
+                            <button
+                                onClick={() => setShowBadModal(false)}
+                                className="px-4 py-2 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-600"
+                            >
+                                확인
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
