@@ -1,8 +1,12 @@
 package com.copoto.project.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.copoto.project.dto.ApiResponseCustom;
 import com.copoto.project.dto.post.PostRequest;
@@ -40,6 +45,26 @@ public class PostController {
 
     @Autowired
     private UserService userService;
+
+    // AI 혐오 검출 API 호출 메서드
+    private boolean isHateSpeech(String text) {
+        String flaskApiUrl = "http://127.0.0.1:5000/predict";
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String payload = "{\"text\":\"" + text + "\"}";
+        HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(flaskApiUrl, entity, Map.class);
+            Map<String, Object> result = response.getBody();
+            Integer isHate = result != null ? (Integer) result.get("is_hate") : null;
+            return isHate != null && isHate == 1;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
     @PostMapping("/create")
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
@@ -86,6 +111,21 @@ public class PostController {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Contents are required", null));
         }
 
+        // AI 혐오 API에 본문 검증 요청
+        // 제목과 내용 모두 검수
+        boolean hateTitle = isHateSpeech(request.getTitle());
+        boolean hateContents = isHateSpeech(request.getContents());
+
+        if (hateTitle || hateContents) {
+            PostResponse response = new PostResponse();
+            response.setTitle(request.getTitle());
+            response.setContents(request.getContents());
+            response.setUserId(request.getUserId());
+            response.setHateSpeech(hateTitle || hateContents);
+            return ResponseEntity.status(403).body(
+                new ApiResponseCustom<>(403, "혐오 발언이 감지되어 게시글이 등록되지 않았습니다.", response));
+        }
+
         User user = userService.getUserById(request.getUserId());
         if (user == null) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Invalid user ID", null));
@@ -105,6 +145,7 @@ public class PostController {
         response.setUserId(createdPost.getUser().getId());
         response.setCreatedAt(createdPost.getCreatedAt());
         response.setUpdatedAt(createdPost.getUpdatedAt());
+        response.setHateSpeech(false); // 정상 등록 시 false
 
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Post created successfully", response));
     }
@@ -212,7 +253,7 @@ public class PostController {
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Posts fetched successfully", posts));
     }
 
-    @PutMapping("/{postId}")
+   @PutMapping("/{postId}")
     @Operation(summary = "게시글 수정", description = "특정 게시글을 수정합니다.")
     @ApiResponses({
         @ApiResponse(
@@ -229,15 +270,33 @@ public class PostController {
                             "contents": "Updated content of the post.",
                             "userId": "user123",
                             "createdAt": "2023-01-01T12:00:00",
-                            "updatedAt": "2023-01-02T12:00:00"
+                            "updatedAt": "2023-01-02T12:00:00",
+                            "hateSpeech": false
                         }
                     }
                 """)
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<PostResponse>> updatePost(@PathVariable Long postId, @RequestBody String newContents) {
-        Post updatedPost = postService.updatePost(postId, newContents);
+    public ResponseEntity<ApiResponseCustom<PostResponse>> updatePost(
+        @PathVariable("postId") Long postId,
+        @RequestBody PostRequest request) {
+
+        // 제목/내용 모두 검수
+        boolean hateTitle = isHateSpeech(request.getTitle());
+        boolean hateContents = isHateSpeech(request.getContents());
+
+        if (hateTitle || hateContents) {
+            PostResponse response = new PostResponse();
+            response.setTitle(request.getTitle());
+            response.setContents(request.getContents());
+            response.setUserId(null); // 필요시 userId 세팅
+            response.setHateSpeech(true);
+            return ResponseEntity.status(403).body(
+                new ApiResponseCustom<>(403, "혐오 발언이 감지되어 게시글이 수정되지 않았습니다.", response));
+        }
+
+        Post updatedPost = postService.updatePost(postId, request.getTitle(), request.getContents());
 
         PostResponse response = new PostResponse();
         response.setPostId(updatedPost.getPostId());
@@ -246,9 +305,11 @@ public class PostController {
         response.setUserId(updatedPost.getUser().getId());
         response.setCreatedAt(updatedPost.getCreatedAt());
         response.setUpdatedAt(updatedPost.getUpdatedAt());
+        response.setHateSpeech(false);
 
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Post updated successfully", response));
     }
+
 
     @DeleteMapping("/{postId}")
     @Operation(summary = "게시글 삭제", description = "특정 게시글을 삭제합니다.")
