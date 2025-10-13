@@ -15,7 +15,7 @@ lora_model_dir = "final_kcelectra_lora_model"
 model = PeftModel.from_pretrained(base_model, lora_model_dir)
 
 # 2. 테스트 데이터셋 준비 (이전 단계에서 분리한 test_df를 사용)
-test_df = pd.read_csv('test_combined_dataset.csv') # 테스트 데이터가 따로 있다면 이 코드 사용
+test_df = pd.read_csv('../dataset/test_combined_dataset.csv') # 테스트 데이터가 따로 있다면 이 코드 사용
 test_df = test_df.head(20000)
 test_df = test_df.rename(columns={'sentence': 'text', 'is_hate': 'labels'})
 test_dataset = Dataset.from_pandas(test_df)
