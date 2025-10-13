@@ -33,9 +33,10 @@ public class PostService {
     }
 
     // 게시글 수정 (Update)
-    public Post updatePost(Long postId, String newContents) {
+    public Post updatePost(Long postId, String newTitle, String newContents) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+            .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+        post.setTitle(newTitle);
         post.setContents(newContents);
         return postRepository.save(post);
     }

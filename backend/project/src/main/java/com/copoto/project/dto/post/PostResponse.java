@@ -25,6 +25,9 @@ public class PostResponse {
     @Schema(description = "게시글 수정 시간", example = "2023-01-02T12:00:00")
     private LocalDateTime updatedAt;
 
+    @Schema(description = "혐오 발언 여부", example = "false")
+    private Boolean hateSpeech; // 추가
+
     // Getter and Setter
     public Long getPostId() {
         return postId;
@@ -73,4 +76,7 @@ public class PostResponse {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public Boolean getHateSpeech() { return hateSpeech; }
+    public void setHateSpeech(Boolean hateSpeech) { this.hateSpeech = hateSpeech; }
 }

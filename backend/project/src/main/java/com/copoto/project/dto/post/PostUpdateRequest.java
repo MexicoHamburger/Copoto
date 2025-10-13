@@ -8,6 +8,9 @@ public class PostUpdateRequest {
     @Schema(description = "게시글 ID", example = "123", required = true)
     private Long postId;
 
+    @Schema(description = "게시글 제목", example = "Updated title of the post", required = true)
+    private String title;      // 추가
+
     @Schema(description = "게시글 내용", example = "Updated content of the post.", required = true)
     private String contents;
 
@@ -19,6 +22,9 @@ public class PostUpdateRequest {
     public void setPostId(Long postId) {
         this.postId = postId;
     }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
     public String getContents() {
         return contents;
