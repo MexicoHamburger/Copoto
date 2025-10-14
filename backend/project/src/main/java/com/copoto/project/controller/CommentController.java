@@ -30,9 +30,19 @@ import com.copoto.project.service.CommentService;
 import com.copoto.project.service.PostService;
 import com.copoto.project.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/comment")
 @CrossOrigin(origins = "http://localhost:3000")
+@Tag(name = "댓글 API", description = "게시글 댓글 등록/조회/수정/삭제 및 혐오 발언 검출")
 public class CommentController {
 
     @Autowired
@@ -60,8 +70,75 @@ public class CommentController {
         }
     }
 
+
+    @Operation(
+        summary = "댓글 생성",
+        description = "게시글에 댓글을 등록합니다. 혐오 발언은 등록 거부됩니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Comment created succesfully",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Comment created successfully",
+                        "data": {
+                            "commentId": 5,
+                            "content": "정상 댓글입니다.",
+                            "userId": "sc9335",
+                            "postId": 3,
+                            "createdAt": "2025-10-14T10:59:48.351317",
+                            "hateSpeech": false
+                        }
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Content is required",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 400,
+                        "message": "Content is required",
+                        "data": null
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "혐오표현 탐지",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 403,
+                        "message": "혐오 발언이 감지되어 댓글이 등록되지 않았습니다.",
+                        "data": {
+                            "commentId": null,
+                            "content": "뭐래 개 버러지 새끼가",
+                            "userId": "sc9335",
+                            "postId": 3,
+                            "createdAt": null,
+                            "hateSpeech": true
+                        }
+                    }
+                """)
+            )
+        )
+    })
     @PostMapping("/create")
-    public ResponseEntity<ApiResponseCustom<CommentResponse>> createComment(@RequestBody CommentRequest request) {
+    public ResponseEntity<ApiResponseCustom<CommentResponse>> createComment(
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "댓글 등록 요청",
+            required = true,
+            content = @Content(schema = @Schema(implementation = CommentRequest.class))
+        )
+        @RequestBody CommentRequest request
+    ) {
         if (request.getContent() == null || request.getContent().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Content is required", null));
         }
@@ -105,8 +182,27 @@ public class CommentController {
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Comment created successfully", response));
     }
 
+
+    @Operation(
+        summary = "댓글 단건 조회",
+        description = "댓글 ID로 댓글을 조회합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "댓글 존재",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CommentResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "해당 댓글 없음"
+        )
+    })
     @GetMapping("/{commentId}")
-    public ResponseEntity<ApiResponseCustom<CommentResponse>> getCommentById(@PathVariable("commentId") Long commentId) {
+    public ResponseEntity<ApiResponseCustom<CommentResponse>> getCommentById(
+        @Parameter(description = "댓글 ID", example = "1", required = true)
+        @PathVariable("commentId") Long commentId
+    ) {
         try {
             Comment comment = commentService.getCommentById(commentId);
             CommentResponse response = new CommentResponse();
@@ -121,8 +217,29 @@ public class CommentController {
         }
     }
 
+
+
+    @Operation(
+        summary = "게시글별 댓글 전체 조회",
+        description = "게시글 ID로 댓글 목록을 조회합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "댓글 목록 반환",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = CommentResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "게시글 없음"
+        )
+    })
     @GetMapping("/post/{postId}")
-    public ResponseEntity<ApiResponseCustom<List<CommentResponse>>> getCommentsByPost(@PathVariable("postId") Long postId) {
+    public ResponseEntity<ApiResponseCustom<List<CommentResponse>>> getCommentsByPost(
+        @Parameter(description = "게시글 ID", example = "1", required = true)
+        @PathVariable("postId") Long postId
+    ) {
         try {
             Post post = postService.getPostById(postId);
             List<Comment> comments = commentService.getCommentsByPost(post);
@@ -141,9 +258,43 @@ public class CommentController {
         }
     }
 
+
+
+    @Operation(
+        summary = "댓글 수정",
+        description = "댓글 내용을 수정합니다. 혐오 발언이 감지되면 거부됩니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "수정 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CommentResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "필수 값 누락"
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "혐오 발언 감지"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "댓글 없음"
+        )
+    })
     @PutMapping("/{commentId}")
-    public ResponseEntity<ApiResponseCustom<CommentResponse>> updateComment(@PathVariable("commentId") Long commentId,
-            @RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponseCustom<CommentResponse>> updateComment(
+        @Parameter(description = "댓글 ID", example = "1", required = true)
+        @PathVariable("commentId") Long commentId,
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "수정할 내용(JSON: {\"content\": \"...\"})", required = true,
+            content = @Content(schema = @Schema(
+                example = "{\"content\":\"수정할 댓글 내용\"}"
+            ))
+        )
+        @RequestBody Map<String, String> body
+    ) {
         String newContent = body.get("content");
         if (newContent == null || newContent.isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Content is required", null));
@@ -169,8 +320,27 @@ public class CommentController {
         }
     }
 
+
+
+    @Operation(
+        summary = "댓글 삭제",
+        description = "댓글 ID로 댓글을 삭제합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "삭제 성공"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "댓글 없음"
+        )
+    })
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<ApiResponseCustom<Void>> deleteComment(@PathVariable Long commentId) {
+    public ResponseEntity<ApiResponseCustom<Void>> deleteComment(
+        @Parameter(description = "댓글 ID", example = "1", required = true)
+        @PathVariable Long commentId
+    ) {
         try {
             commentService.deleteComment(commentId);
             return ResponseEntity.ok(new ApiResponseCustom<>(200, "Comment deleted successfully", null));
