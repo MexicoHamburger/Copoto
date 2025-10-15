@@ -1,32 +1,60 @@
 import { useSearchParams, useNavigate } from "react-router";
 import axios from 'axios';
-import { useState } from 'react';
-import { ShieldAlert } from 'lucide-react'; // 아이콘 (lucide-react 사용 시)
+import { useState, useEffect, useMemo } from 'react';
+import { ShieldAlert } from 'lucide-react'; // lucide-react 미설치면 ⚠️ 이모지로 대체하세요.
+
+const BOARDS = [
+  { key: "notice", label: "공지사항" },
+  { key: "free",   label: "자유게시판" },
+  { key: "qna",    label: "Q&A" },
+];
 
 function CreatePostPage() {
-    const [searchParams] = useSearchParams();
-    const boardType = searchParams.get("boardType");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialBoard = searchParams.get("boardType"); // URL 쿼리
+    const [selectedBoard, setSelectedBoard] = useState(initialBoard || "");
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const navigate = useNavigate();
     const [showBadModal, setShowBadModal] = useState(false);
 
+    // URL 쿼리 변경 시 상태 동기화 (외부 네비게이션 대비)
+    useEffect(() => {
+      const q = searchParams.get("boardType") || "";
+      setSelectedBoard(q);
+    }, [searchParams]);
+
     const handleTitleBlur = (e) => setTitle(e.target.value);
     const handleContentBlur = (e) => setContent(e.target.value);
 
+    const handlePickBoard = (key) => {
+      setSelectedBoard(key);
+      const next = new URLSearchParams(searchParams);
+      if (key) next.set("boardType", key);
+      else next.delete("boardType");
+      setSearchParams(next, { replace: true });
+    };
+
+    const boardLabel = useMemo(() => {
+      const found = BOARDS.find(b => b.key === selectedBoard);
+      return found?.label ?? "게시판 미선택";
+    }, [selectedBoard]);
+
     const handlePost = (e) => {
         e.preventDefault();
+        if (!selectedBoard) return alert("게시판을 선택해주세요.");
         if (!title) return alert("제목을 입력해주세요.");
         if (!content) return alert("내용을 입력해주세요.");
 
         const postData = {
             title,
             contents: content,
-            userId: window.localStorage.getItem("userid")
+            userId: window.localStorage.getItem("userid"),
+            boardType: selectedBoard, // 백엔드가 받도록 함께 전송 (무시해도 안전)
         };
 
         axios.post('/api/post/create', postData)
-            .then(() => navigate(`/dashboards/${boardType}`))
+            .then(() => navigate(`/dashboards/${selectedBoard}`))
             .catch(error => {
                 if (axios.isAxiosError(error) && error.response?.status === 403) {
                     setShowBadModal(true);
@@ -41,11 +69,43 @@ function CreatePostPage() {
             <h1 className="text-3xl mb-4">게시글 작성</h1>
 
             {/* 🔷 혐오표현 탐지 안내문구 */}
-            <div className="flex items-center bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-3 mb-5 shadow-sm">
+            <div className="flex items-center bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-3 mb-3 shadow-sm">
+                {/* lucide-react 없으면 아래 줄 대신 <span className="mr-2">⚠️</span> */}
                 <ShieldAlert className="w-5 h-5 mr-2 text-blue-600" />
                 <p className="text-sm font-medium">
                     혐오표현 탐지 AI가 작동 중입니다. 부적절한 표현이 감지될 경우 게시글/댓글 게시가 제한됩니다.
                 </p>
+            </div>
+
+            {/* 🧭 게시판 선택 탭 */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">작성 위치</span>
+                <span className="text-xs px-2 py-0.5 rounded-full border bg-gray-50 text-gray-600">
+                  {boardLabel}
+                </span>
+              </div>
+              <div className="flex gap-2 p-1 rounded-2xl bg-gray-100/70 border border-gray-200">
+                {BOARDS.map(({ key, label }) => {
+                  const active = selectedBoard === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handlePickBoard(key)}
+                      className={
+                        "flex-1 text-sm font-semibold px-4 py-2 rounded-2xl transition " +
+                        (active
+                          ? "bg-white text-blue-600 shadow-sm border border-blue-200"
+                          : "text-gray-600 hover:bg-white/70 hover:text-gray-800")
+                      }
+                      aria-pressed={active}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex">

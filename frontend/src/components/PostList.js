@@ -45,15 +45,12 @@ function PostList() {
                 <div className="font-bold text-2xl pt-4 pb-4">
                     전체 게시글 보기
                 </div>
-
-                {dashboard ? (
-                    <button
-                        className="w-auto p-2 h-auto bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600"
-                        onClick={handleWritePost}
-                    >
-                        게시글 작성
-                    </button>
-                ) : null}
+                <button
+                    className="w-auto p-2 h-auto bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600"
+                    onClick={handleWritePost}
+                >
+                    게시글 작성
+                </button>
             </div>
             <div className="pr-[0%]">
                 {sorted.length > 0 ? (
