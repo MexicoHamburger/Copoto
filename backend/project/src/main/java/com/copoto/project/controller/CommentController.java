@@ -218,7 +218,6 @@ public class CommentController {
     }
 
 
-
     @Operation(
         summary = "게시글별 댓글 전체 조회",
         description = "게시글 ID로 댓글 목록을 조회합니다."
@@ -258,6 +257,45 @@ public class CommentController {
         }
     }
 
+
+    @Operation(
+        summary = "유저별 댓글 전체 조회",
+        description = "유저 ID로 댓글 목록을 조회합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "댓글 목록 반환",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = CommentResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "해당하는 유저 없음"
+        )
+    })
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponseCustom<List<CommentResponse>>> getCommentsByUser(
+        @Parameter(description = "유저 ID", example = "user123", required = true)
+        @PathVariable("userId") String userId
+    ) {
+        try {
+            User user = userService.getUserById(userId);
+            List<Comment> comments = commentService.getCommentsByUser(user);
+            List<CommentResponse> list = comments.stream().map(comment -> {
+                CommentResponse res = new CommentResponse();
+                res.setCommentId(comment.getId());
+                res.setContent(comment.getContent());
+                res.setUserId(comment.getUser().getId());
+                res.setPostId(comment.getPost().getPostId());
+                res.setCreatedAt(comment.getCreatedAt());
+                return res;
+            }).collect(Collectors.toList());
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Comments fetched successfully", list));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, e.getMessage(), null));
+        }
+    }
 
 
     @Operation(

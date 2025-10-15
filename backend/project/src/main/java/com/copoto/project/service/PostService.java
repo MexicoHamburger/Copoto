@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.copoto.project.entity.Comment;
 import com.copoto.project.entity.Post;
 import com.copoto.project.entity.User;
 import com.copoto.project.repository.PostRepository;
@@ -31,7 +32,16 @@ public class PostService {
 
     // 특정 게시판의 게시글 조회 (Read)
     public List<Post> getPostsByType(String type) {
-        return postRepository.findByType(type);
+        return postRepository.findAll().stream()
+                .filter(post -> post.getType().equals(type))
+                .toList();
+    }
+
+    // 특정 유저의 게시글 조회 (Read)
+    public List<Post> getPostsByUser(User user) {
+        return postRepository.findAll().stream()
+                .filter(post -> post.getUser().equals(user))
+                .toList();
     }
 
     // 모든 게시글 조회 (Read)
