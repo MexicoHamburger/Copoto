@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from "react-router";
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import parseDate from '../util/parseDate';
-import CommentsSection from '../components/CommentsSection'; // ✅ 추가
+import CommentsSection from '../components/CommentsSection';
 
 function ViewPostPage() {
   const [title, setTitle] = useState("");
@@ -13,7 +13,7 @@ function ViewPostPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`/api/post/${params.pageId}`)
+    api.get(`/post/${params.pageId}`)
       .then(response => {
         setTitle(response.data.data.title);
         setContents(response.data.data.contents);

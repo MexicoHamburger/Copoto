@@ -29,10 +29,11 @@ function LoginPage() {
       setHasError(false);
       axios.post('/api/user/login', postData)
       .then(response => {
-        //일시적으로 localStorage에 토큰을 저장
-        window.localStorage.setItem("token", "response.data.data");
+      const { accessToken, refreshToken } = response.data.data;
 
-        //temporary storage. userid는 localstorage에 안 넣는편이 좋을듯
+      window.localStorage.setItem("accessToken", accessToken);
+      window.localStorage.setItem("refreshToken", refreshToken);
+
         window.localStorage.setItem("userid", username);
         const toGo = window.localStorage.getItem("afterLogin") || "/";
         navigate(toGo);
