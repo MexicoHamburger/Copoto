@@ -16,6 +16,12 @@ public class PostResponse {
     @Schema(description = "게시글 내용", example = "This is the content of the post.")
     private String contents;
 
+    @Schema(description = "게시판 구분", example = "free")
+    private String type;
+
+    @Schema(description = "조회수", example = "0")
+    private Long view_count;
+
     @Schema(description = "작성자 ID", example = "user1")
     private String userId;
 
@@ -51,6 +57,22 @@ public class PostResponse {
 
     public void setContents(String contents) {
         this.contents = contents;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Long getViewCount() {
+        return view_count;
+    }
+
+    public void setViewCount(Long view_count) {
+        this.view_count = view_count;
     }
 
     public String getUserId() {

@@ -3,6 +3,7 @@ package com.copoto.project.entity;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +30,10 @@ public class Comment {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", updatable = true)
+    private LocalDateTime updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "post_id", nullable = false)

@@ -18,8 +18,11 @@ public class CommentResponse {
     @Schema(description = "게시글 ID", example = "456")
     private Long postId;
 
-    @Schema(description = "작성일시", example = "2025-10-14T12:34:56")
+    @Schema(description = "댓글 작성 시간", example = "2025-10-14T12:34:56")
     private LocalDateTime createdAt;
+
+    @Schema(description = "댓글 수정 시간", example = "2025-10-15T12:34:56")
+    private LocalDateTime updatedAt;
 
     @Schema(description = "혐오 발언 여부", example = "false")
     private Boolean hateSpeech; // 추가

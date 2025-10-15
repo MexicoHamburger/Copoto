@@ -14,6 +14,9 @@ public class PostUpdateRequest {
     @Schema(description = "게시글 내용", example = "Updated content of the post.", required = true)
     private String contents;
 
+    @Schema(description = "게시판 구분", example = "free", required = true)
+    private String type;
+
     // Getter and Setter
     public Long getPostId() {
         return postId;
@@ -32,5 +35,13 @@ public class PostUpdateRequest {
 
     public void setContents(String contents) {
         this.contents = contents;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

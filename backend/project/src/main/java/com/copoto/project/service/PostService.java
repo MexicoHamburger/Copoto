@@ -23,8 +23,10 @@ public class PostService {
 
     // 특정 게시글 조회 (Read)
     public Post getPostById(Long postId) {
-        return postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+        post.setView_count(post.getView_count() + 1L);
+        return postRepository.save(post);
     }
 
     // 모든 게시글 조회 (Read)
@@ -33,11 +35,12 @@ public class PostService {
     }
 
     // 게시글 수정 (Update)
-    public Post updatePost(Long postId, String newTitle, String newContents) {
+    public Post updatePost(Long postId, String newTitle, String newContents, String newType) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException("Post not found"));
         post.setTitle(newTitle);
         post.setContents(newContents);
+        post.setType(newType);
         return postRepository.save(post);
     }
 

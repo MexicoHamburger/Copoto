@@ -81,6 +81,8 @@ public class PostController {
                             "postId": "1",
                             "title": "My First Post",
                             "contents": "This is the content of the first post.",
+                            "type": "free",
+                            "view_count": "0",
                             "userId": "user123",
                             "createdAt": "2023-01-01T12:00:00",
                             "updatedAt": "2023-01-01T12:00:00"
@@ -96,7 +98,7 @@ public class PostController {
                 examples = @ExampleObject(value = """
                     {
                         "status": 400,
-                        "message": "Title and contents are required",
+                        "message": "Title, contents and type are required",
                         "data": null
                     }
                 """)
@@ -110,6 +112,9 @@ public class PostController {
         if (request.getContents() == null || request.getContents().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Contents are required", null));
         }
+        if (request.getType() == null || request.getType().isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Type are required", null));
+        }
 
         // AI 혐오 API에 본문 검증 요청
         // 제목과 내용 모두 검수
@@ -120,6 +125,7 @@ public class PostController {
             PostResponse response = new PostResponse();
             response.setTitle(request.getTitle());
             response.setContents(request.getContents());
+            response.setType(request.getType());
             response.setUserId(request.getUserId());
             response.setHateSpeech(hateTitle || hateContents);
             return ResponseEntity.status(403).body(
@@ -134,6 +140,8 @@ public class PostController {
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setContents(request.getContents());
+        post.setType(request.getType());
+        post.setView_count(0L);
         post.setUser(user);
 
         Post createdPost = postService.createPost(post, user);
@@ -142,6 +150,8 @@ public class PostController {
         response.setPostId(createdPost.getPostId());
         response.setTitle(createdPost.getTitle());
         response.setContents(createdPost.getContents());
+        response.setType(createdPost.getType());
+        response.setViewCount(createdPost.getView_count());
         response.setUserId(createdPost.getUser().getId());
         response.setCreatedAt(createdPost.getCreatedAt());
         response.setUpdatedAt(createdPost.getUpdatedAt());
@@ -165,6 +175,8 @@ public class PostController {
                             "postId": "1",
                             "title": "My First Post",
                             "contents": "This is the content of the first post.",
+                            "type": "free",
+                            "view_count": "3",
                             "userId": "user123",
                             "createdAt": "2023-01-01T12:00:00",
                             "updatedAt": "2023-01-01T12:00:00"
@@ -197,6 +209,8 @@ public class PostController {
         response.setPostId(post.getPostId());
         response.setTitle(post.getTitle());
         response.setContents(post.getContents());
+        response.setType(post.getType());
+        response.setViewCount(post.getView_count());
         response.setUserId(post.getUser().getId());
         response.setCreatedAt(post.getCreatedAt());
         response.setUpdatedAt(post.getUpdatedAt());
@@ -220,6 +234,8 @@ public class PostController {
                                 "postId": "1",
                                 "title": "My First Post",
                                 "contents": "This is the content of the first post.",
+                                "type": "free",
+                                "view_count": "3",
                                 "userId": "user123",
                                 "createdAt": "2023-01-01T12:00:00",
                                 "updatedAt": "2023-01-01T12:00:00"
@@ -228,6 +244,8 @@ public class PostController {
                                 "postId": "2",
                                 "title": "My Second Post",
                                 "contents": "This is the content of the second post.",
+                                "type": "qna",
+                                "view_count": "5",
                                 "userId": "user456",
                                 "createdAt": "2023-01-02T12:00:00",
                                 "updatedAt": "2023-01-02T12:00:00"
@@ -244,6 +262,8 @@ public class PostController {
             response.setPostId(post.getPostId());
             response.setTitle(post.getTitle());
             response.setContents(post.getContents());
+            response.setType(post.getType());
+            response.setViewCount(post.getView_count());
             response.setUserId(post.getUser().getId());
             response.setCreatedAt(post.getCreatedAt());
             response.setUpdatedAt(post.getUpdatedAt());
@@ -268,6 +288,8 @@ public class PostController {
                             "postId": "1",
                             "title": "Updated Post",
                             "contents": "Updated content of the post.",
+                            "type": "qna",
+                            "view_count": "3",
                             "userId": "user123",
                             "createdAt": "2023-01-01T12:00:00",
                             "updatedAt": "2023-01-02T12:00:00",
@@ -291,17 +313,20 @@ public class PostController {
             response.setTitle(request.getTitle());
             response.setContents(request.getContents());
             response.setUserId(null); // 필요시 userId 세팅
+            response.setType(request.getType());
             response.setHateSpeech(true);
             return ResponseEntity.status(403).body(
                 new ApiResponseCustom<>(403, "혐오 발언이 감지되어 게시글이 수정되지 않았습니다.", response));
         }
 
-        Post updatedPost = postService.updatePost(postId, request.getTitle(), request.getContents());
+        Post updatedPost = postService.updatePost(postId, request.getTitle(), request.getContents(), request.getType());
 
         PostResponse response = new PostResponse();
         response.setPostId(updatedPost.getPostId());
         response.setTitle(updatedPost.getTitle());
         response.setContents(updatedPost.getContents());
+        response.setType(updatedPost.getType());
+        response.setViewCount(updatedPost.getView_count());
         response.setUserId(updatedPost.getUser().getId());
         response.setCreatedAt(updatedPost.getCreatedAt());
         response.setUpdatedAt(updatedPost.getUpdatedAt());
