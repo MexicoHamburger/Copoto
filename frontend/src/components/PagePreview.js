@@ -20,8 +20,29 @@ function formatRelativeKorean(dateLike) {
   return `${year}년 전`;
 }
 
-function PagePreview({ page, commentCount = 0 }) {
+// 스켈레톤 한 카드
+function PreviewSkeleton() {
+  return (
+    <div className="border-b border-gray-200 py-3">
+      <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
+      <div className="mt-2 flex items-center gap-3">
+        <div className="h-3 w-20 bg-gray-200 rounded animate-pulse" />
+        <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+        <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+      </div>
+      <div className="mt-2 h-4 w-5/6 bg-gray-200 rounded animate-pulse" />
+      <div className="mt-1 h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+    </div>
+  );
+}
+
+function PagePreview({ page, commentCount = 0, loading = false }) {
   const navigate = useNavigate();
+
+  if (loading) {
+    return <PreviewSkeleton />;
+  }
+
   const author = page?.userId ?? "알 수 없음";
   const createdRel = formatRelativeKorean(page?.createdAt);
   const type = page?.type ?? "";
@@ -48,10 +69,12 @@ function PagePreview({ page, commentCount = 0 }) {
       className="border-b border-gray-200 py-3 hover:bg-gray-50 cursor-pointer transition"
       onClick={handleTitleClick}
     >
-      <h1 className="font-semibold text-[20px] text-gray-800 hover:text-blue-700 hover:underline underline-offset-2 decoration-blue-500">
-        {page?.title} {typeof commentCount === "number" ? `[${commentCount}]` : ""}
+      {/* 제목 + [댓글수] */}
+      <h1 className="font-semibold text-[15px] text-gray-800 hover:text-blue-700 hover:underline underline-offset-2 decoration-blue-500">
+        {page?.title} {`[${commentCount}]`}
       </h1>
 
+      {/* 게시판명 / 작성자 / 작성시간 */}
       <div className="text-sm text-gray-500 mt-0.5">
         <span
           onClick={handleTypeClick}
