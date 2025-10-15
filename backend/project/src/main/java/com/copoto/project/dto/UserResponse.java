@@ -10,9 +10,6 @@ public class UserResponse {
     @Schema(description = "사용자 ID", example = "user1")
     private String id;
 
-    @Schema(description = "비밀번호", example = "password123")
-    private String password;
-
     @Schema(description = "닉네임", example = "SKKUniv쓲빢", required = true)
     private String nickname;
 
@@ -23,23 +20,13 @@ public class UserResponse {
     public String getId() {
         return id;
     }
-
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
@@ -47,8 +34,7 @@ public class UserResponse {
     public String getNickname(){
         return nickname;
     }
-
     public void setNickname(String nickname){
-        this.nickname=nickname;
+        this.nickname = nickname;
     }
 }
