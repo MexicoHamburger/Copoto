@@ -58,99 +58,125 @@ function TopBar() {
         window.localStorage.setItem("currentBoard", board ?? "main");
     }, [location.pathname]);
 
-    const tabClass = (name) =>
-        `w-auto px-4 h-auto py-2 rounded-3xl cursor-pointer transition ${currentBoard === name ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-        }`;
+    const tabClass = (name) => {
+        const isActive = currentBoard === name;
+        return [
+            "px-5 py-2 rounded-xl border text-base font-semibold transition",
+            "cursor-pointer select-none",
+            "shadow-[0_0_0_0_rgba(0,0,0,0)] hover:shadow-sm",   // hover 시 살짝 그림자
+            "transform hover:-translate-y-[1px]",               // 살짝 떠오르는 효과
+            isActive
+                ? "bg-blue-50 text-blue-700 border-blue-400"
+                : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300",
+            "focus:outline-none focus:ring-2 focus:ring-blue-200"
+        ].join(" ");
+    };
 
     return (
         <>
-            <header className="border-b flex fixed top-0 left-0 w-full bg-white z-50">
-                <div className="pl-[10%]">
-                    <img
-                        src={CopotoLogo}
-                        alt="Copoto Logo"
-                        className="max-w-[150px] p-4 cursor-pointer"
-                        onClick={() => navigate("/")}
-                    />
-                </div>
+            <header className="border-b fixed py-3 left-0 w-full bg-white z-50">
+                {/* 안쪽 컨테이너 */}
+                <div className="mx-auto w-full max-w-[1200px] px-6 py-1
+                  flex items-center gap-4 justify-between">
+                    {/* 왼쪽: 로고 */}
+                    <button onClick={() => navigate("/")} className="flex items-center gap-2">
+                        <img src={CopotoLogo} alt="Copoto Logo" className="h-10 w-auto" />
+                        {/* 선택: 텍스트 로고가 있다면 여기에 */}
+                    </button>
 
-                <div className="w-[15%] flex items-center justify-center text-xl font-bold">
-                    <div className={tabClass("notice")} onClick={() => navigate("/dashboards/notice")}>
-                        공지사항
-                    </div>
-                </div>
-                <div className="w-[15%] flex items-center justify-center text-xl font-bold">
-                    <div className={tabClass("free")} onClick={() => navigate("/dashboards/free")}>
-                        자유게시판
-                    </div>
-                </div>
-                <div className="w-[15%] flex items-center justify-center text-xl font-bold">
-                    <div className={tabClass("qna")} onClick={() => navigate("/dashboards/qna")}>
-                        Q&A
-                    </div>
-                </div>
+                    {/* 가운데: 탭 + 검색 */}
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {/* 탭 그룹 */}
+                        <nav className="flex items-center gap-4 flex-none">
+                            <button
+                                role="tab"
+                                aria-selected={currentBoard === "notice"}
+                                className={tabClass("notice")}
+                                onClick={() => navigate("/dashboards/notice")}
+                            >
+                                공지사항
+                            </button>
+                            <button
+                                role="tab"
+                                aria-selected={currentBoard === "free"}
+                                className={tabClass("free")}
+                                onClick={() => navigate("/dashboards/free")}
+                            >
+                                자유게시판
+                            </button>
+                            <button
+                                role="tab"
+                                aria-selected={currentBoard === "qna"}
+                                className={tabClass("qna")}
+                                onClick={() => navigate("/dashboards/qna")}
+                            >
+                                Q&A
+                            </button>
+                        </nav>
 
-                <div className="w-[22%] my-5">
-                    <div className="flex items-center border border-gray-300 rounded-full px-2 shadow-sm overflow-hidden">
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className="flex-1 h-9 px-2 outline-none text-gray-700 placeholder-gray-400"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && runSearch()}
-                        />
-                        <button
-                            onClick={runSearch}
-                            className="ml-1 h-8 px-3 rounded-full bg-blue-500 text-white text-sm font-medium
-                 hover:bg-blue-600 shrink-0 whitespace-nowrap min-w-[64px] leading-none"
-                            aria-label="검색"
-                        >
-                            검색
-                        </button>
+                        <div className="flex-1 min-w-[320px] max-w-[420px]">
+                            <div className="flex items-center border border-gray-300 rounded-full px-2 py-1 shadow-sm overflow-hidden">
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    className="flex-1 h-9 px-2 outline-none text-gray-700 placeholder-gray-400"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && runSearch()}
+                                />
+                                <button
+                                    onClick={runSearch}
+                                    className="ml-1 h-8 px-3 rounded-full bg-blue-500 text-white text-sm font-medium
+                       hover:bg-blue-600 shrink-0 whitespace-nowrap min-w-[64px] leading-none"
+                                >
+                                    검색
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div className="ml-[2%] w-[20%] flex items-center">
-                    {hasToken ? (
-                        <>
-                            <button
-                                onClick={handleLogout}
-                                className="w-20 ml-5 p-2 h-1/2 bg-gray-200 text-blue-500 text-xs font-bold rounded-3xl hover:bg-gray-300"
-                            >
-                                로그아웃
-                            </button>
-                            <button
-                                onClick={() => navigate("/profile")}
-                                className="w-30 ml-5 p-2 h-1/2 bg-blue-500 text-white text-xs font-bold rounded-3xl hover:bg-blue-600"
-                            >
-                                회원 정보 보기
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => {
-                                    const currentPage = location.pathname + location.search;
-                                    window.localStorage.setItem("afterLogin", currentPage);
-                                    navigate("/login");
-                                }}
-                                className="w-20 p-2 h-1/2 bg-blue-500 text-white text-xs font-bold rounded-3xl hover:bg-blue-600"
-                            >
-                                로그인
-                            </button>
-                            <button
-                                onClick={() => navigate("/register")}
-                                className="w-20 ml-5 p-2 h-1/2 bg-gray-200 text-blue-500 text-xs font-bold rounded-3xl hover:bg-gray-300"
-                            >
-                                회원가입
-                            </button>
-                        </>
-                    )}
+                    {/* 오른쪽: 로그인/로그아웃/프로필 */}
+                    <div className="flex items-center gap-2 flex-none">
+                        {hasToken ? (
+                            <>
+                                <button
+                                    onClick={handleLogout}
+                                    className="px-3 py-2 rounded-full bg-gray-100 text-blue-600 text-xs font-bold hover:bg-gray-200"
+                                >
+                                    로그아웃
+                                </button>
+                                <button
+                                    onClick={() => navigate("/profile")}
+                                    className="px-3 py-2 rounded-full bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
+                                >
+                                    회원 정보 보기
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        const currentPage = location.pathname + location.search;
+                                        window.localStorage.setItem("afterLogin", currentPage);
+                                        navigate("/login");
+                                    }}
+                                    className="px-3 py-2 rounded-full bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
+                                >
+                                    로그인
+                                </button>
+                                <button
+                                    onClick={() => navigate("/register")}
+                                    className="px-3 py-2 rounded-full bg-gray-100 text-blue-600 text-xs font-bold hover:bg-gray-200"
+                                >
+                                    회원가입
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </header>
 
-            <div className="pt-[75px] pl-[10%] pr-[10%]">
+            <div className="pt-[70px] pl-[20%] pr-[20%]">
                 <Outlet />
             </div>
         </>
