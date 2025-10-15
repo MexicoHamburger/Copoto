@@ -1,7 +1,7 @@
 import { useSearchParams, useNavigate } from "react-router";
 import axios from 'axios';
-import { useState, useEffect, useMemo } from 'react';
-import { ShieldAlert } from 'lucide-react'; // lucide-react 미설치면 ⚠️ 이모지로 대체하세요.
+import { useState, useEffect, useMemo, useRef } from 'react';
+// import { ShieldAlert } from 'lucide-react'; // 미설치면 이 줄 주석 처리하고 이모지 사용
 
 const BOARDS = [
   { key: "notice", label: "공지사항" },
@@ -11,14 +11,16 @@ const BOARDS = [
 
 function CreatePostPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialBoard = searchParams.get("boardType"); // URL 쿼리
+    const initialBoard = searchParams.get("boardType");
     const [selectedBoard, setSelectedBoard] = useState(initialBoard || "");
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+    const [boardError, setBoardError] = useState(false);
+    const tabsRef = useRef(null);
+
     const navigate = useNavigate();
     const [showBadModal, setShowBadModal] = useState(false);
 
-    // URL 쿼리 변경 시 상태 동기화 (외부 네비게이션 대비)
     useEffect(() => {
       const q = searchParams.get("boardType") || "";
       setSelectedBoard(q);
@@ -29,6 +31,7 @@ function CreatePostPage() {
 
     const handlePickBoard = (key) => {
       setSelectedBoard(key);
+      setBoardError(false); // 선택하면 에러 해제
       const next = new URLSearchParams(searchParams);
       if (key) next.set("boardType", key);
       else next.delete("boardType");
@@ -42,7 +45,16 @@ function CreatePostPage() {
 
     const handlePost = (e) => {
         e.preventDefault();
-        if (!selectedBoard) return alert("게시판을 선택해주세요.");
+
+        // ✅ BOARD 미선택 시, 절대 전송하지 않음
+        if (!selectedBoard) {
+          setBoardError(true);
+          // 탭 영역으로 스크롤해서 사용자 시선 유도
+          tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          // 간단한 흔들림 애니메이션을 주고 싶으면 아래처럼 클래스 토글도 가능
+          return;
+        }
+
         if (!title) return alert("제목을 입력해주세요.");
         if (!content) return alert("내용을 입력해주세요.");
 
@@ -50,7 +62,7 @@ function CreatePostPage() {
             title,
             contents: content,
             userId: window.localStorage.getItem("userid"),
-            boardType: selectedBoard, // 백엔드가 받도록 함께 전송 (무시해도 안전)
+            boardType: selectedBoard, // 백엔드에서도 사용 가능하도록 전달
         };
 
         axios.post('/api/post/create', postData)
@@ -64,28 +76,40 @@ function CreatePostPage() {
             });
     };
 
+    const canSubmit = !!selectedBoard && !!title && !!content;
+
     return (
         <div className="pt-[30px]">
             <h1 className="text-3xl mb-4">게시글 작성</h1>
 
             {/* 🔷 혐오표현 탐지 안내문구 */}
             <div className="flex items-center bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-3 mb-3 shadow-sm">
-                {/* lucide-react 없으면 아래 줄 대신 <span className="mr-2">⚠️</span> */}
-                <ShieldAlert className="w-5 h-5 mr-2 text-blue-600" />
+                {/* <ShieldAlert className="w-5 h-5 mr-2 text-blue-600" /> */}
+                <span className="mr-2">⚠️</span>
                 <p className="text-sm font-medium">
                     혐오표현 탐지 AI가 작동 중입니다. 부적절한 표현이 감지될 경우 게시글/댓글 게시가 제한됩니다.
                 </p>
             </div>
 
             {/* 🧭 게시판 선택 탭 */}
-            <div className="mb-5">
+            <div className="mb-5" ref={tabsRef}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-600">작성 위치</span>
-                <span className="text-xs px-2 py-0.5 rounded-full border bg-gray-50 text-gray-600">
+                <span className={`text-xs px-2 py-0.5 rounded-full border bg-gray-50 ${boardError ? "text-red-600 border-red-300" : "text-gray-600"}`}>
                   {boardLabel}
                 </span>
               </div>
-              <div className="flex gap-2 p-1 rounded-2xl bg-gray-100/70 border border-gray-200">
+
+              <div
+                className={
+                  "flex gap-2 p-1 rounded-2xl border " +
+                  (boardError
+                    ? "bg-red-50 border-red-300"
+                    : "bg-gray-100/70 border-gray-200")
+                }
+                aria-invalid={boardError ? "true" : "false"}
+                aria-describedby={boardError ? "board-error-text" : undefined}
+              >
                 {BOARDS.map(({ key, label }) => {
                   const active = selectedBoard === key;
                   return (
@@ -106,6 +130,12 @@ function CreatePostPage() {
                   );
                 })}
               </div>
+
+              {boardError && (
+                <p id="board-error-text" className="mt-1 text-xs text-red-600">
+                  게시판을 선택해주세요.
+                </p>
+              )}
             </div>
 
             <div className="flex">
@@ -151,7 +181,14 @@ function CreatePostPage() {
                 </button>
                 <button
                     onClick={handlePost}
-                    className="mt-5 ml-auto p-2 pl-4 pr-4 bg-blue-500 text-white text-xs font-bold rounded-lg hover:bg-blue-600"
+                    disabled={!canSubmit}
+                    className={
+                      "mt-5 ml-auto p-2 pl-4 pr-4 text-white text-xs font-bold rounded-lg " +
+                      (canSubmit
+                        ? "bg-blue-500 hover:bg-blue-600"
+                        : "bg-blue-300 cursor-not-allowed")
+                    }
+                    aria-disabled={!canSubmit}
                 >
                     게시글 작성
                 </button>
