@@ -32,9 +32,12 @@ public class SecurityConfig {
                         "/api/user/register",
                         "/api/user/login",
                         "/api/user/token/refresh",
+                        "/api/user/verify/**",
                         "/swagger-ui/**",
                         "/v3/api-docs/**"
                     ).permitAll()
+                    //GET요청 바로 통과하도록
+                    .requestMatchers("/**").permitAll().requestMatchers(request -> "GET".equalsIgnoreCase(request.getMethod())).permitAll()
                     .anyRequest().authenticated()
             )
             .exceptionHandling(exceptions -> exceptions
