@@ -11,8 +11,9 @@ public class PostRequest {
     @Schema(description = "게시글 내용", example = "This is the content of the post.", required = true)
     private String contents;
 
-    @Schema(description = "작성자 ID", example = "user1", required = true)
-    private String userId;
+    //토큰기반으로 변경되면서 제외
+    // @Schema(description = "작성자 ID", example = "user1", required = true)
+    // private String userId;
 
     @Schema(description = "게시판 구분", example = "free", required = true)
     private String type;
@@ -33,13 +34,13 @@ public class PostRequest {
         this.contents = contents;
     }
 
-    public String getUserId() {
-        return userId;
-    }
+    // public String getUserId() {
+    //     return userId;
+    // }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
+    // public void setUserId(String userId) {
+    //     this.userId = userId;
+    // }
 
     public String getType() {
         return type;
