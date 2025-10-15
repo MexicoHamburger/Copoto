@@ -14,6 +14,9 @@ public class PostRequest {
     @Schema(description = "작성자 ID", example = "user1", required = true)
     private String userId;
 
+    @Schema(description = "게시판 구분", example = "free", required = true)
+    private String type;
+
     public String getTitle() {
         return title;
     }
@@ -36,5 +39,13 @@ public class PostRequest {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
