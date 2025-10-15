@@ -2,6 +2,7 @@ package com.copoto.project.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -29,8 +30,10 @@ import com.copoto.project.service.PostService;
 import com.copoto.project.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -325,6 +328,47 @@ public class PostController {
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Posts fetched successfully", postResponses));
     }
 
+    @Operation(
+        summary = "유저별 게시글 전체 조회",
+        description = "유저 ID로 게시글 목록을 조회합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "게시글 목록 반환",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = PostResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "해당하는 유저 없음"
+        )
+    })
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponseCustom<List<PostResponse>>> getPostsByUser(
+        @Parameter(description = "유저 ID", example = "user123", required = true)
+        @PathVariable("userId") String userId
+    ) {
+        try {
+            User user = userService.getUserById(userId);
+            List<Post> posts = postService.getPostsByUser(user);
+            List<PostResponse> list = posts.stream().map(post -> {
+                PostResponse res = new PostResponse();
+                res.setPostId(post.getPostId());
+                res.setTitle(post.getTitle());
+                res.setContents(post.getContents());
+                res.setType(post.getType());
+                res.setViewCount(post.getView_count());
+                res.setUserId(post.getUser().getId());
+                res.setCreatedAt(post.getCreatedAt());
+                res.setUpdatedAt(post.getUpdatedAt());
+                return res;
+            }).collect(Collectors.toList());
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Comments fetched successfully", list));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, e.getMessage(), null));
+        }
+    }
 
     @GetMapping("/all")
     @Operation(summary = "모든 게시글 조회 - GET이므로 현재는 auth를 필요로 하지 않습니다.", description = "모든 게시글 목록을 반환합니다.")

@@ -36,6 +36,13 @@ public class CommentService {
                 .toList();
     }
 
+    // 특정 유저의 모든 댓글 조회 (Read)
+    public List<Comment> getCommentsByUser(User user) {
+        return commentRepository.findAll().stream()
+                .filter(post -> post.getUser().equals(user))
+                .toList();
+    }
+
     // 댓글 수정 (Update)
     public Comment updateComment(Long commentId, String newContent) {
         Comment comment = commentRepository.findById(commentId)
