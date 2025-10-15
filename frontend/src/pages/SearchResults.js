@@ -1,7 +1,7 @@
 // src/pages/SearchResults.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
-import axios from "axios";
+import { api } from '../lib/api';
 import PagePreview from "../components/PagePreview";
 
 const useQuery = () => new URLSearchParams(useLocation().search);
@@ -18,7 +18,7 @@ export default function SearchResults() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    axios.get("/api/post/all")
+    api.get("/post/all")
       .then(res => { if (mounted) setPostlist(res.data?.data || []); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };

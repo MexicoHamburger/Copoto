@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 import tempImg from '../images/copotoLogo.png';
 import parseDate from '../util/parseDate';
 
@@ -9,7 +9,7 @@ function ViewPostPage() {
     const userid = window.localStorage.getItem("userid");
 
     useEffect(() => {
-        axios.get(`/api/user/profile/${userid}`)
+        api.get(`/user/profile/${userid}`)
             .then(response => {
                 setNickname(response.data.data.nickname);
                 setCreatedAt(parseDate(response.data.data.createdAt));

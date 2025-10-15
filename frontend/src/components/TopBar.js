@@ -15,6 +15,11 @@ function TopBar() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const refreshHasToken = () => {
+        const token = window.localStorage.getItem("accessToken");
+        setHasToken(!!token);
+    }
+
     const handleLogout = () => {
         try {
             window.localStorage.clear();
@@ -40,8 +45,7 @@ function TopBar() {
     };
 
     useEffect(() => {
-        const tokenExists = !!window.localStorage.getItem("token");
-        setHasToken(tokenExists);
+        refreshHasToken();
     }, []);
 
     useEffect(() => {

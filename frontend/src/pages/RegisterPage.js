@@ -138,7 +138,6 @@ function RegisterPage() {
   }
 
   const setErrorUI = (type) => {
-    console.log(formErrors)
     const username = formErrors["username"]
     const password = formErrors["password"]
     const nickname = formErrors["nickname"]

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 
 export default function CommentsSection({ postId }) {
   const [comments, setComments] = useState([]);
@@ -9,7 +9,7 @@ export default function CommentsSection({ postId }) {
   const [submitting, setSubmitting] = useState(false);
   const [createMsg, setCreateMsg] = useState("");
 
-  const isLoggedIn = !!window.localStorage.getItem("token");
+  const isLoggedIn = !!window.localStorage.getItem("accessToken");
   const userId = window.localStorage.getItem("userid") || "";
 
   const loadComments = useCallback(async () => {
@@ -17,7 +17,7 @@ export default function CommentsSection({ postId }) {
     try {
       setLoading(true);
       setErrMsg("");
-      const res = await axios.get(`/api/comment/post/${postId}`);
+      const res = await api.get(`/comment/post/${postId}`);
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
       setComments(list);
     } catch (e) {
@@ -46,7 +46,7 @@ export default function CommentsSection({ postId }) {
         content: input.trim(),
       };
 
-      const res = await axios.post("/api/comment/create", payload);
+      const res = await api.post("/comment/create", payload);
       const created = res.data?.data;
       if (created?.commentId) {
         setComments((prev) => [created, ...prev]);
@@ -56,7 +56,7 @@ export default function CommentsSection({ postId }) {
         setCreateMsg("댓글 등록 결과를 확인할 수 없습니다.");
       }
     } catch (e) {
-      if (axios.isAxiosError(e) && e.response?.status === 403) {
+      if (e.response?.status === 403) {
         const msg = e.response?.data?.message || "혐오 표현이 감지되어 등록되지 않았습니다.";
         setCreateMsg(msg);
       } else {
