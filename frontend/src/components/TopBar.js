@@ -12,7 +12,7 @@ const extractBoard = (pathname) => {
 function TopBar() {
     const [hasToken, setHasToken] = useState(false);
     const [currentBoard, setCurrentBoard] = useState(null);
-    const [query, setQuery] = useState("");               // ✅ 검색어 상태
+    const [query, setQuery] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -155,7 +155,7 @@ function TopBar() {
                                     onClick={() => navigate("/profile")}
                                     className="px-3 py-2 rounded-full bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
                                 >
-                                    회원 정보 보기
+                                    마이페이지
                                 </button>
                             </>
                         ) : (
