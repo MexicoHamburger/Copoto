@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import CopotoLogo from "../images/copotoLogo.png";
 import { useNavigate, Outlet, useLocation } from "react-router";
+import { api } from "../lib/api";
 
 const BOARD_REGEX = /^\/dashboards\/([^\/\?]+)/;
 const extractBoard = (pathname) => {
@@ -20,8 +21,9 @@ function TopBar() {
         setHasToken(!!token);
     }
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         try {
+            await api.post("/user/logout", null);
             window.localStorage.clear();
             setHasToken(false);
             if (typeof window.location.reload === "function") {
