@@ -29,6 +29,11 @@ public class PostService {
         return postRepository.save(post);
     }
 
+    // 특정 게시판의 게시글 조회 (Read)
+    public List<Post> getPostsByType(String type) {
+        return postRepository.findByType(type);
+    }
+
     // 모든 게시글 조회 (Read)
     public List<Post> getAllPosts() {
         return postRepository.findAll();

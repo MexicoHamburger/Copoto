@@ -218,6 +218,64 @@ public class PostController {
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Post fetched successfully", response));
     }
 
+    @GetMapping("/type/{type}")
+    @Operation(summary = "게시판 별 게시글 조회", description = "게시판 별 게시글 목록을 반환합니다.")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Posts for the given type fetched successfully",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Posts fetched successfully",
+                        "data": [
+                            {
+                                "postId": "1",
+                                "title": "My First Post in Free Board",
+                                "contents": "This is the content.",
+                                "type": "free",
+                                "view_count": "10",
+                                "userId": "user123",
+                                "createdAt": "2023-01-01T12:00:00",
+                                "updatedAt": "2023-01-01T12:00:00"
+                            },
+                            {
+                                "postId": "3",
+                                "title": "My First Post in Free Board",
+                                "contents": "This is the content.",
+                                "type": "free",
+                                "view_count": "15",
+                                "userId": "user456",
+                                "createdAt": "2023-01-01T12:00:00",
+                                "updatedAt": "2023-01-01T12:00:00"
+                            }
+                        ]
+                    }
+                """)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseCustom<List<PostResponse>>> getPostsByType(@PathVariable String type) {
+        List<Post> posts = postService.getPostsByType(type);
+
+        List<PostResponse> postResponses = posts.stream().map(post -> {
+            PostResponse response = new PostResponse();
+            response.setPostId(post.getPostId());
+            response.setTitle(post.getTitle());
+            response.setContents(post.getContents());
+            response.setType(post.getType());
+            response.setViewCount(post.getView_count());
+            response.setUserId(post.getUser().getId());
+            response.setCreatedAt(post.getCreatedAt());
+            response.setUpdatedAt(post.getUpdatedAt());
+            return response;
+        }).toList();
+
+        return ResponseEntity.ok(new ApiResponseCustom<>(200, "Posts fetched successfully", postResponses));
+    }
+
+
     @GetMapping("/all")
     @Operation(summary = "모든 게시글 조회", description = "모든 게시글 목록을 반환합니다.")
     @ApiResponses({
