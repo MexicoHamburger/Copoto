@@ -9,6 +9,4 @@ import com.copoto.project.entity.Post;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-    // 게시판 별 게시글 조회
-    List<Post> findByType(String type);
 }
