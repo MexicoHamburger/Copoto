@@ -27,7 +27,7 @@
 
 ### API 테스트 방법
 서버를 실행한 뒤에 아래의 문서를 확인하세요
-[api 명세서](http://localhost:8080/swagger-ui.html)
+[api 명세서](http://localhost:8080/swagger-ui/index.html)
 
 </details>
 
