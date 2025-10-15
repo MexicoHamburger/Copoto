@@ -5,12 +5,13 @@ import { useNavigate, Outlet, useLocation } from "react-router";
 const BOARD_REGEX = /^\/dashboards\/([^\/\?]+)/;
 const extractBoard = (pathname) => {
     const m = pathname.match(BOARD_REGEX);
-    return m ? m[1] : null; // null이면 메인 화면 등
+    return m ? m[1] : null;
 };
 
 function TopBar() {
     const [hasToken, setHasToken] = useState(false);
-    const [currentBoard, setCurrentBoard] = useState(null); // "notice" | "free" | "qna" | null
+    const [currentBoard, setCurrentBoard] = useState(null);
+    const [query, setQuery] = useState("");               // ✅ 검색어 상태
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -28,6 +29,15 @@ function TopBar() {
         }
     };
 
+    // ✅ 검색 실행
+    const runSearch = () => {
+        const q = query.trim();
+        if (!q) return;
+        // 현재 보드와 함께 저장해두면 결과에서 필터 가능
+        window.localStorage.setItem("searchKeyword", q);
+        window.localStorage.setItem("searchBoard", currentBoard || "main");
+        navigate(`/search?q=${encodeURIComponent(q)}`);
+    };
 
     useEffect(() => {
         const tokenExists = !!window.localStorage.getItem("token");
@@ -41,20 +51,15 @@ function TopBar() {
         window.addEventListener("storage", onStorage);
         return () => window.removeEventListener("storage", onStorage);
     }, []);
+
     useEffect(() => {
         const board = extractBoard(location.pathname);
         setCurrentBoard(board);
-        if (board) {
-            window.localStorage.setItem("currentBoard", board);
-        } else {
-            window.localStorage.setItem("currentBoard", "main");
-        }
+        window.localStorage.setItem("currentBoard", board ?? "main");
     }, [location.pathname]);
 
     const tabClass = (name) =>
-        `w-auto px-4 h-auto py-2 rounded-3xl cursor-pointer transition ${currentBoard === name
-            ? "bg-blue-500 text-white"
-            : "hover:bg-gray-200"
+        `w-auto px-4 h-auto py-2 rounded-3xl cursor-pointer transition ${currentBoard === name ? "bg-blue-500 text-white" : "hover:bg-gray-200"
         }`;
 
     return (
@@ -85,12 +90,25 @@ function TopBar() {
                     </div>
                 </div>
 
-                <div className="w-[15%] flex items-center border border-gray-300 rounded-3xl px-4 my-3 shadow-sm">
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="outline-none w-full text-gray-700 placeholder-gray-400"
-                    />
+                <div className="w-[22%] my-5">
+                    <div className="flex items-center border border-gray-300 rounded-full px-2 shadow-sm overflow-hidden">
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="flex-1 h-9 px-2 outline-none text-gray-700 placeholder-gray-400"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && runSearch()}
+                        />
+                        <button
+                            onClick={runSearch}
+                            className="ml-1 h-8 px-3 rounded-full bg-blue-500 text-white text-sm font-medium
+                 hover:bg-blue-600 shrink-0 whitespace-nowrap min-w-[64px] leading-none"
+                            aria-label="검색"
+                        >
+                            검색
+                        </button>
+                    </div>
                 </div>
 
                 <div className="ml-[2%] w-[20%] flex items-center">
