@@ -52,7 +52,6 @@ function CreatePostPage() {
         e.preventDefault();
 
         const token = window.localStorage.getItem('accessToken');
-        console.log(token);
         if (!token) {
             window.localStorage.setItem('afterLogin', `/createpost?boardType=${selectedBoard}`);
             navigate('/login');

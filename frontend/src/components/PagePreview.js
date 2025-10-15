@@ -6,7 +6,7 @@ function formatRelativeKorean(dateLike) {
   if (isNaN(created.getTime())) return "-";
 
   const now = new Date();
-  const diffMs = Math.max(0, now - created); // 미래 날짜 방어
+  const diffMs = Math.max(0, now - created);
   const sec = Math.floor(diffMs / 1000);
   const min = Math.floor(sec / 60);
   const hour = Math.floor(min / 60);
@@ -20,28 +20,53 @@ function formatRelativeKorean(dateLike) {
   return `${year}년 전`;
 }
 
-function PagePreview({ page }) {
+function PagePreview({ page, commentCount = 0 }) {
   const navigate = useNavigate();
   const author = page?.userId ?? "알 수 없음";
   const createdRel = formatRelativeKorean(page?.createdAt);
+  const type = page?.type ?? "";
+
+  const typeLabelMap = {
+    notice: "공지사항",
+    free: "자유게시판",
+    qna: "Q&A",
+  };
+  const typeLabel = typeLabelMap[type] ?? "전체 게시판";
+
+  const handleTypeClick = (e) => {
+    e.stopPropagation();
+    if (!type) return;
+    navigate(`/dashboards/${type}`);
+  };
+
+  const handleTitleClick = () => {
+    navigate(`/pages/${page.postId}`);
+  };
 
   return (
     <div
-      className="border p-4 hover:bg-gray-50 cursor-pointer rounded-md"
-      onClick={() => navigate(`/pages/${page.postId}`)}
+      className="border-b border-gray-200 py-3 hover:bg-gray-50 cursor-pointer transition"
+      onClick={handleTitleClick}
     >
-      {/* 제목 */}
-      <h1 className="font-bold text-xl pb-1">{page?.title}</h1>
+      <h1 className="font-semibold text-[20px] text-gray-800 hover:text-blue-700 hover:underline underline-offset-2 decoration-blue-500">
+        {page?.title} {typeof commentCount === "number" ? `[${commentCount}]` : ""}
+      </h1>
 
-      {/* 메타: 작성자 · 작성일(상대시간) */}
-      <div className="text-sm text-gray-500 pb-2">
-        <span className="font-medium">{author}</span>
-        <span className="mx-2">·</span>
+      <div className="text-sm text-gray-500 mt-0.5">
+        <span
+          onClick={handleTypeClick}
+          className="text-blue-600 hover:underline cursor-pointer"
+        >
+          {typeLabel}
+        </span>
+        <span className="mx-1 text-gray-400">/</span>
+        <span>{author}</span>
+        <span className="mx-1 text-gray-400">·</span>
         <time>{createdRel}</time>
       </div>
 
-      {/* 본문 미리보기 (원하면 line-clamp-3 사용) */}
-      <p className="text-gray-700 max-h-[72px] overflow-hidden">
+      {/* 본문 미리보기 */}
+      <p className="text-gray-700 text-[14px] mt-1 line-clamp-2">
         {page?.contents}
       </p>
     </div>
