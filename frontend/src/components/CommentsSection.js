@@ -7,10 +7,10 @@ export default function CommentsSection({ postId }) {
   const [errMsg, setErrMsg] = useState("");
   const [input, setInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [createMsg, setCreateMsg] = useState(""); // 성공/실패 안내
+  const [createMsg, setCreateMsg] = useState("");
 
   const isLoggedIn = !!window.localStorage.getItem("token");
-  const userId = window.localStorage.getItem("userid") || ""; // ← 로그인 시 저장해둔 값 사용
+  const userId = window.localStorage.getItem("userid") || "";
 
   const loadComments = useCallback(async () => {
     if (!postId) return;
@@ -18,7 +18,6 @@ export default function CommentsSection({ postId }) {
       setLoading(true);
       setErrMsg("");
       const res = await axios.get(`/api/comment/post/${postId}`);
-      // 예상: res.data.data 가 배열
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
       setComments(list);
     } catch (e) {
@@ -42,13 +41,12 @@ export default function CommentsSection({ postId }) {
       setCreateMsg("");
 
       const payload = {
-        userId,          // string
-        postId: Number(postId), // API가 number로 받는다면 변환
+        userId,
+        postId: Number(postId),
         content: input.trim(),
       };
 
       const res = await axios.post("/api/comment/create", payload);
-      // 200 성공: res.data.data 안에 생성된 댓글(필드명: commentId, content, userId, postId, createdAt, hateSpeech)
       const created = res.data?.data;
       if (created?.commentId) {
         setComments((prev) => [created, ...prev]);
@@ -58,7 +56,6 @@ export default function CommentsSection({ postId }) {
         setCreateMsg("댓글 등록 결과를 확인할 수 없습니다.");
       }
     } catch (e) {
-      // 403 혐오표현 탐지 케이스
       if (axios.isAxiosError(e) && e.response?.status === 403) {
         const msg = e.response?.data?.message || "혐오 표현이 감지되어 등록되지 않았습니다.";
         setCreateMsg(msg);
@@ -73,6 +70,14 @@ export default function CommentsSection({ postId }) {
   return (
     <section className="mt-8">
       <h2 className="mb-3 text-xl font-bold">댓글</h2>
+
+      {/* 🔷 혐오표현 안내 배너 (댓글 작성란 위) */}
+      <div className="flex items-center bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-3 mb-3 shadow-sm">
+        <span className="mr-2">⚠️</span>
+        <p className="text-sm font-medium">
+          혐오표현 탐지 AI가 작동 중입니다. 부적절한 표현이 감지될 경우 게시글/댓글 게시가 제한됩니다.
+        </p>
+      </div>
 
       {/* 입력 영역 */}
       <form
@@ -150,7 +155,6 @@ export default function CommentsSection({ postId }) {
   );
 }
 
-/** 간단한 KST 포맷터 (서버가 ISO8601 문자열 주는 기준) */
 function formatKST(iso) {
   if (!iso) return "";
   try {
