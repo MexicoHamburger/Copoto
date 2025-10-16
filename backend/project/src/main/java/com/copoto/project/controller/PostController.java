@@ -273,11 +273,11 @@ public class PostController {
     }
 
     @GetMapping("/type/{type}")
-    @Operation(summary = "게시판 별 게시글 조회 - GET이므로 현재는 auth를 필요로 하지 않습니다.", description = "게시판 별 게시글 목록을 반환합니다.")
+    @Operation(summary = "게시판 별 게시글 조회 - GET이므로 현재는 auth를 필요로 하지 않습니다.", description = "게시판 별 게시글 목록을 반환합니다. 글이 없을 경우 빈 목록을 반환합니다.")
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Posts for the given type fetched successfully",
+            description = "Posts fetched successfully",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
@@ -330,19 +330,56 @@ public class PostController {
     }
 
     @Operation(
-        summary = "유저별 게시글 전체 조회",
+        summary = "유저 별 게시글 전체 조회 - GET이므로 현재는 auth를 필요로 하지 않습니다.",
         description = "유저 ID로 게시글 목록을 조회합니다."
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "게시글 목록 반환",
+            description = "Posts fetched successfully",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(implementation = PostResponse.class))
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Posts fetched successfully",
+                        "data": [
+                            {
+                                "postId": "1",
+                                "title": "My First Post",
+                                "contents": "This is the content of the first post.",
+                                "type": "free",
+                                "view_count": "3",
+                                "userId": "user123",
+                                "createdAt": "2023-01-01T12:00:00",
+                                "updatedAt": "2023-01-01T12:00:00"
+                            },
+                            {
+                                "postId": "2",
+                                "title": "My Second Post",
+                                "contents": "This is the content of the second post.",
+                                "type": "qna",
+                                "view_count": "5",
+                                "userId": "user456",
+                                "createdAt": "2023-01-02T12:00:00",
+                                "updatedAt": "2023-01-02T12:00:00"
+                            }
+                        ]
+                    }
+                """)
+            )
         ),
         @ApiResponse(
             responseCode = "404",
-            description = "해당하는 유저 없음"
+            description = "User not found",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 404,
+                        "message": "User not found with ID: user123",
+                        "data": null
+                    }
+                """)
+            )
         )
     })
     @GetMapping("/user/{userId}")
@@ -365,7 +402,7 @@ public class PostController {
                 res.setUpdatedAt(post.getUpdatedAt());
                 return res;
             }).collect(Collectors.toList());
-            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Comments fetched successfully", list));
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Posts fetched successfully", list));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, e.getMessage(), null));
         }
