@@ -8,7 +8,7 @@ CREATE TABLE user (
 CREATE TABLE post (
     post_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    contents TEXT NOT NULL,
+    contents LONGTEXT NOT NULL,
     type VARCHAR(50) NOT NULL,
     view_count BIGINT NOT NULL,
     user_id VARCHAR(50) NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE post (
 
 CREATE TABLE comment (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    content TEXT NOT NULL,
+    content LONGTEXT NOT NULL,
     post_id BIGINT NOT NULL,
     user_id VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
