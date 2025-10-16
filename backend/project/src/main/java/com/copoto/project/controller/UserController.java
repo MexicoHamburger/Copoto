@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,24 +18,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.copoto.project.dto.ApiResponseCustom;
+import com.copoto.project.dto.CommentResponse;
 import com.copoto.project.dto.LoginRequest;
+import com.copoto.project.dto.RefreshTokenRequest;
 import com.copoto.project.dto.RegisterRequest;
+import com.copoto.project.dto.UserProfileResponse;
 import com.copoto.project.dto.UserResponse;
 import com.copoto.project.dto.VerifyIDRequest;
 import com.copoto.project.dto.VerifyNicknameRequest;
+import com.copoto.project.dto.post.PostResponse;
+import com.copoto.project.entity.Comment;
+import com.copoto.project.entity.Post;
 import com.copoto.project.entity.RefreshToken;
 import com.copoto.project.entity.User;
 import com.copoto.project.repository.RefreshTokenRepository;
 import com.copoto.project.repository.UserRepository;
 import com.copoto.project.security.JwtTokenProvider;
+import com.copoto.project.service.CommentService;
+import com.copoto.project.service.PostService;
 import com.copoto.project.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/user")
@@ -46,6 +57,12 @@ public class UserController {
     private UserService userService;
 
     @Autowired
+    private PostService postService;
+    
+    @Autowired
+    private CommentService commentService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -55,21 +72,20 @@ public class UserController {
     private RefreshTokenRepository refreshTokenRepository;
 
     @PostMapping("/register")
-    @Operation(summary = "회원 가입", description = "새로운 회원을 등록합니다.")
+    @Operation(summary = "회원 가입 - auth를 필요로하지 않습니다.", description = "새로운 회원을 등록합니다.")
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "User registered successfully",
+            description = "정상적으로 회원가입 성공 - User registered successfully",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
                         "status": 200,
                         "message": "User registered successfully",
                         "data": {
-                            "id": "user123",
-                            "password": "Password",
-                            "nickname": "SKKUniv쓲빢",
-                            "createdAt": "2023-01-01T12:00:00"
+                            "id": "test10",
+                            "nickname": "테스트10",
+                            "createdAt": "2025-10-16T19:40:01.488466"
                         }
                     }
                 """)
@@ -77,24 +93,24 @@ public class UserController {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "User ID or Password is missing",
+            description = "RequestBody에서 뭔가 부족합니다 - User ID or Password or something is missing",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
                         "status": 400,
-                        "message": "User ID or Password is required",
+                        "message": "Password is required",
                         "data": null
                     }
                 """)
             )
         ),
         @ApiResponse(
-            responseCode = "501",
-            description = "User ID is already in used",
+            responseCode = "409",
+            description = "중복된 ID입니다 - User ID is already in used",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
-                        "status": 500,
+                        "status": 409,
                         "message": "User ID is already in used",
                         "data": null
                     }
@@ -135,11 +151,11 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "로그인", description = "회원 로그인 기능을 제공합니다.")
+    @Operation(summary = "로그인 - auth를 필요로하지 않습니다.", description = "회원 로그인 기능을 제공합니다.")
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Login successful",
+            description = "로그인 성공 - Login successful",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
@@ -155,7 +171,7 @@ public class UserController {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "User ID or Password is missing",
+            description = "RequestBody에 뭔가 부족합니다 - User ID or Password is missing",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
@@ -168,7 +184,7 @@ public class UserController {
         ),
         @ApiResponse(
             responseCode = "401",
-            description = "Invalid credentials",
+            description = "아이디 또는 비밀번호가 틀렸습니다 - Invalid credentials",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
@@ -207,8 +223,53 @@ public class UserController {
 
     // *** Refresh Token으로 Access Token 재발급 ***
     @PostMapping("/token/refresh")
-    public ResponseEntity<ApiResponseCustom<Map<String, String>>> refreshToken(@RequestBody Map<String, String> request) {
-        String requestRefreshToken = request.get("refreshToken");
+    @Operation(summary = "토큰 리프레쉬 - auth를 필요로하지 않습니다.", description = "새롭게 access Token을 발급받습니다")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "재발급 성공 - Token refreshed",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Token refreshed",
+                        "data": {
+                            "accessToken": "NEW_ACCESS_TOKEN",
+                            "refreshToken": "SAME_REFRESH_TOKEN"
+                        }
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "RefreshToken 오기입 또는 RequestBody 내용 부족' - Refresh token not found.",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 401,
+                        "message": "Refresh token not found.",
+                        "data": {}
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "RefreshToken 만료 - Refresh token expired.",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 403,
+                        "message": "Refresh token expired. Please login again.",
+                        "data": null
+                    }
+                """)
+            )
+        )
+    })
+    public ResponseEntity<ApiResponseCustom<Map<String, String>>> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
 
         Optional<RefreshToken> optionalToken = userService.findByToken(requestRefreshToken);
 
@@ -228,7 +289,7 @@ public class UserController {
             return ResponseEntity.ok(new ApiResponseCustom<>(200, "Token refreshed", tokenMap));
         } else {
             Map<String, String> emptyMap = new HashMap<>();
-            return ResponseEntity.status(403).body(new ApiResponseCustom<>(403, "Refresh token not found.", emptyMap));
+            return ResponseEntity.status(401).body(new ApiResponseCustom<>(401, "Refresh token not found.", emptyMap));
         }
     }
 
@@ -236,11 +297,11 @@ public class UserController {
 
 
     @PostMapping("/logout")
-    @Operation(summary = "로그아웃", description = "현재 세션을 없애 로그아웃 기능을 제공합니다.")
+    @Operation(summary = "로그아웃 - auth를 필요로합니다.", description = "현재 세션을 없애 로그아웃 기능을 제공합니다.")
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Logout successful",
+            description = "로그아웃 성공 - Logout successful",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
@@ -252,8 +313,21 @@ public class UserController {
             )
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "토큰이 이상합니다 (안보냈거나, 오기입)- User not authenticated",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 401,
+                        "message": "User not authenticated",
+                        "data": null
+                    }
+                """)
+            )
+        ),
+        @ApiResponse(
             responseCode = "400",
-            description = "already no session",
+            description = "유효한 access token이지만 이미 로그아웃했습니다 - already no session",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
@@ -278,71 +352,154 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponseCustom<>(200, "Logout successful", null));
     }
 
-    @GetMapping("/profile/{user_id}")
-    @Operation(summary = "개인 프로필", description = "현재 로그인되어있는 유저의 프로필을 가져옵니다")
+    //이제 프로필 검색 개선해야함
+
+    @GetMapping("/profile/{id}")
+    @Operation(summary = "개인 프로필 - auth를 필요로 하지 않습니다", description = "검색한 유저의 프로필을 가져옵니다")
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "User profile found",
+            description = "해당 유저의 정보를 가져옵니다 - User profile found",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                         {
                             "status": 200,
-                            "message": "User profile found",
+                            "message": "User profile fetched successfully",
                             "data": {
-                                "id": "kangsc9336",
-                                "password": "gomsupak12!",
-                                "nickname": "곰수팍젤리존맛",
-                                "createdAt": "2025-01-09T15:43:17.402514"
+                                "id": "showmethemoney",
+                                "nickname": "쇼미더머니",
+                                "createdAt": "2025-10-16T20:49:42.924343",
+                                "posts": [
+                                    {
+                                        "postId": 22,
+                                        "title": "ddd",
+                                        "contents": "ddddd",
+                                        "type": "notice",
+                                        "userId": "showmethemoney",
+                                        "createdAt": "2025-10-16T20:51:34.763332",
+                                        "updatedAt": "2025-10-16T21:07:31.458837",
+                                        "hateSpeech": null,
+                                        "viewCount": 2
+                                    },
+                                    {
+                                        "postId": 23,
+                                        "title": "쇼미 자유게시판",
+                                        "contents": "쇼미 자유게시판",
+                                        "type": "free",
+                                        "userId": "showmethemoney",
+                                        "createdAt": "2025-10-16T21:07:52.468643",
+                                        "updatedAt": "2025-10-16T21:07:52.468643",
+                                        "hateSpeech": null,
+                                        "viewCount": 0
+                                    },
+                                    {
+                                        "postId": 24,
+                                        "title": "쇼미 QA",
+                                        "contents": "tyal QA",
+                                        "type": "qna",
+                                        "userId": "showmethemoney",
+                                        "createdAt": "2025-10-16T21:08:02.622237",
+                                        "updatedAt": "2025-10-16T21:08:02.622237",
+                                        "hateSpeech": null,
+                                        "viewCount": 0
+                                    }
+                                ],
+                                "comments": [
+                                    {
+                                        "commentId": 19,
+                                        "content": "zzz",
+                                        "userId": "showmethemoney",
+                                        "postId": 21,
+                                        "createdAt": "2025-10-16T21:08:08.322507",
+                                        "hateSpeech": null
+                                    },
+                                    {
+                                        "commentId": 20,
+                                        "content": "zzzzzzz",
+                                        "userId": "showmethemoney",
+                                        "postId": 16,
+                                        "createdAt": "2025-10-16T21:08:19.367449",
+                                        "hateSpeech": null
+                                    },
+                                    {
+                                        "commentId": 21,
+                                        "content": "123123",
+                                        "userId": "showmethemoney",
+                                        "postId": 17,
+                                        "createdAt": "2025-10-16T21:08:31.192515",
+                                        "hateSpeech": null
+                                    }
+                                ]
                             }
                         }
                     """)
             )
         ),
         @ApiResponse(
-            responseCode = "401",
-            description = "Not logged in",
+            responseCode = "404",
+            description = "찾을 수 없는 유저 - User not found",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                     {
-                        "status": 401,
-                        "message": "Not logged in",
+                        "status": 404,
+                        "message": "User not found with ID: showmethemone",
                         "data": null
                     }
                 """)
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<UserResponse>> getUserProfile(
-        Authentication authentication,
-        @PathVariable("user_id") String id
+    public ResponseEntity<ApiResponseCustom<UserProfileResponse>> getUserProfile(
+        @Parameter(description = "User ID", example = "user123", required = true)
+        @PathVariable("id") String id
     ) {
-        // 인증된 유저 정보(JWT에서 추출)
-        User loggedInUser = null;
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            loggedInUser = (User) authentication.getPrincipal();
-        }
-        UserResponse userResponse = new UserResponse();
         try {
-            User target_user = userService.getUserById(id);
-            // 본인이 본인 정보 조회일 때
-            if (loggedInUser != null && loggedInUser.getId().equals(id)) {
-                userResponse.setId(loggedInUser.getId());
-                userResponse.setNickname(loggedInUser.getNickname());
-                userResponse.setCreatedAt(loggedInUser.getCreatedAt());
-            } else {
-                // 타인의 정보 조회(특정 정보 제한 필요)
-                userResponse.setNickname(target_user.getNickname());
-                userResponse.setCreatedAt(target_user.getCreatedAt());
-            }
-        } catch(IllegalArgumentException e) {
-            return ResponseEntity.status(401)
-                .body(new ApiResponseCustom<>(401, "User not found with ID", null));
+            // Fetch user entity
+            User user = userService.getUserById(id);
+
+            // Fetch all posts by user
+            List<Post> posts = postService.getPostsByUser(user);
+            List<PostResponse> postResponses = posts.stream().map(post -> {
+                PostResponse postRes = new PostResponse();
+                postRes.setPostId(post.getPostId());
+                postRes.setTitle(post.getTitle());
+                postRes.setContents(post.getContents());
+                postRes.setType(post.getType());
+                postRes.setUserId(post.getUser().getId());
+                postRes.setViewCount(post.getView_count());
+                postRes.setCreatedAt(post.getCreatedAt());
+                postRes.setUpdatedAt(post.getUpdatedAt());
+                return postRes;
+            }).collect(Collectors.toList());
+
+            // Fetch all comments by user
+            List<Comment> comments = commentService.getCommentsByUser(user);
+            List<CommentResponse> commentResponses = comments.stream().map(comment -> {
+                CommentResponse commentRes = new CommentResponse();
+                commentRes.setCommentId(comment.getId());
+                commentRes.setContent(comment.getContent());
+                commentRes.setUserId(comment.getUser().getId());
+                commentRes.setPostId(comment.getPost().getPostId());
+                commentRes.setCreatedAt(comment.getCreatedAt());
+                return commentRes;
+            }).collect(Collectors.toList());
+
+            // Compose the user profile response DTO
+            UserProfileResponse profile = new UserProfileResponse();
+            profile.setId(user.getId());
+            profile.setNickname(user.getNickname());
+            profile.setCreatedAt(user.getCreatedAt());
+            profile.setPosts(postResponses);
+            profile.setComments(commentResponses);
+
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "User profile fetched successfully", profile));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, e.getMessage(), null));
         }
-        return ResponseEntity.ok(new ApiResponseCustom<>(200, "User profile found", userResponse));
     }
 
 
+    //이거는 POST지만 auth가 있어서는 안됨 - 그대로 둠
     @PostMapping("/verify/id")
     @Operation(summary = "유저 검증", description = "해당 유저가 존재하는 지 파악합니다.")
     @ApiResponses({
@@ -399,6 +556,7 @@ public class UserController {
         }
     }
 
+    //이거는 POST지만 auth가 있어서는 안됨 - 그대로 둠
     @PostMapping("/verify/nickname")
     @Operation(summary = "닉네임 검증", description = "해당 닉네임이 사용 중인지 확인합니다.")
     @ApiResponses({
@@ -456,6 +614,7 @@ public class UserController {
     }
 
 
+    
     @GetMapping("/all")
     @Operation(summary = "전체 회원 조회", description = "모든 회원 정보를 반환합니다.")
     @ApiResponses({
