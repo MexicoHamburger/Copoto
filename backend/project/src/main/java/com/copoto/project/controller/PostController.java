@@ -41,7 +41,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/post")
 @CrossOrigin(origins = "http://localhost:3000") // React의 도메인 주소
-@Tag(name = "Post API", description = "게시글 관리 API")
+@Tag(name = "게시판 API", description = "게시글 관리 API")
 public class PostController {
 
     @Autowired

@@ -44,18 +44,27 @@ public class CommentService {
     }
 
     // 댓글 수정 (Update)
-    public Comment updateComment(Long commentId, String newContent) {
+    public Comment updateComment(Long commentId, String newContent, User user) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+            .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+        // 본인만 수정 가능
+        if (!comment.getUser().getId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to edit this comment.");
+        }
         comment.setContent(newContent);
         return commentRepository.save(comment);
     }
 
+
     // 댓글 삭제 (Delete)
-    public void deleteComment(Long commentId) {
-        if (!commentRepository.existsById(commentId)) {
-            throw new IllegalArgumentException("Comment not found");
+    public void deleteComment(Long commentId, User user) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+        // 본인만 삭제 가능
+        if (!comment.getUser().getId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to delete this comment.");
         }
         commentRepository.deleteById(commentId);
     }
+
 }
