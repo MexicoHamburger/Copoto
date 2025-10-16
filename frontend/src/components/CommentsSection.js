@@ -1,8 +1,39 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../lib/api";
 
+const nicknameCache = new Map();          // userId -> nickname
+const pendingReqs = new Map();            // userId -> Promise<string>
+
+async function getNickname(userId) {
+  if (!userId) return "익명";
+  if (nicknameCache.has(userId)) return nicknameCache.get(userId);
+
+  // 중복요청 병합
+  if (pendingReqs.has(userId)) return pendingReqs.get(userId);
+
+  const p = api
+    .get(`/user/profile/${encodeURIComponent(userId)}`)
+    .then((res) => res?.data?.data?.nickname ?? userId)
+    .catch(() => userId)
+    .finally(() => pendingReqs.delete(userId));
+
+  pendingReqs.set(userId, p);
+
+  const nick = await p;
+  nicknameCache.set(userId, nick);
+  return nick;
+}
+
+// 여러 개를 한 번에 resolve
+async function resolveNicknames(userIds) {
+  const uniq = Array.from(new Set(userIds.filter(Boolean)));
+  const pairs = await Promise.all(uniq.map(async (uid) => [uid, await getNickname(uid)]));
+  return Object.fromEntries(pairs);
+}
+
 export default function CommentsSection({ postId }) {
   const [comments, setComments] = useState([]);
+  const [nicknameMap, setNicknameMap] = useState({});  // userId -> nickname
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
   const [input, setInput] = useState("");
@@ -20,6 +51,10 @@ export default function CommentsSection({ postId }) {
       const res = await api.get(`/comment/post/${postId}`);
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
       setComments(list);
+
+      // 닉네임 일괄 조회 후 상태 갱신
+      const map = await resolveNicknames(list.map((c) => c.userId));
+      setNicknameMap((prev) => ({ ...prev, ...map }));
     } catch (e) {
       setErrMsg("댓글을 불러오지 못했습니다.");
     } finally {
@@ -49,6 +84,10 @@ export default function CommentsSection({ postId }) {
       const res = await api.post("/comment/create", payload);
       const created = res.data?.data;
       if (created?.commentId) {
+        // 작성자 닉네임 확보 (캐시/요청)
+        const nick = await getNickname(created.userId);
+        setNicknameMap((prev) => ({ ...prev, [created.userId]: nick }));
+
         setComments((prev) => [created, ...prev]);
         setInput("");
         setCreateMsg("댓글이 등록되었습니다.");
@@ -71,7 +110,7 @@ export default function CommentsSection({ postId }) {
     <section className="mt-8">
       <h2 className="mb-3 text-xl font-bold">댓글</h2>
 
-      {/* 🔷 혐오표현 안내 배너 (댓글 작성란 위) */}
+      {/* 안내 배너 */}
       <div className="flex items-center bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-3 mb-3 shadow-sm">
         <span className="mr-2">⚠️</span>
         <p className="text-sm font-medium">
@@ -79,7 +118,7 @@ export default function CommentsSection({ postId }) {
         </p>
       </div>
 
-      {/* 입력 영역 */}
+      {/* 입력 */}
       <form
         onSubmit={handleCreate}
         className="mb-4 rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
@@ -92,7 +131,7 @@ export default function CommentsSection({ postId }) {
           onChange={(e) => setInput(e.target.value)}
         />
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs">
             {createMsg && (
               <span className={/혐오|등록되지/i.test(createMsg) ? "text-red-600" : "text-green-600"}>
                 {createMsg}
@@ -114,7 +153,7 @@ export default function CommentsSection({ postId }) {
         </div>
       </form>
 
-      {/* 목록 영역 */}
+      {/* 목록 */}
       {loading ? (
         <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
           불러오는 중…
@@ -122,10 +161,7 @@ export default function CommentsSection({ postId }) {
       ) : errMsg ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {errMsg}
-          <button
-            onClick={loadComments}
-            className="ml-2 text-blue-600 underline underline-offset-2"
-          >
+          <button onClick={loadComments} className="ml-2 text-blue-600 underline underline-offset-2">
             다시 시도
           </button>
         </div>
@@ -138,15 +174,13 @@ export default function CommentsSection({ postId }) {
           {comments.map((c) => (
             <li key={c.commentId} className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-800">
-                  {c.userId ?? "익명"}
+                <div className="text-m font-semibold text-gray-800">
+                  {nicknameMap[c.userId] ?? c.userId ?? "익명"}
                 </div>
                 <div className="text-xs text-gray-400">{formatKST(c.createdAt)}</div>
               </div>
               <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{c.content}</p>
-              {c.hateSpeech && (
-                <div className="mt-2 text-xs text-red-600">※ 신고/필터 대상</div>
-              )}
+              {c.hateSpeech && <div className="mt-2 text-xs text-red-600">※ 신고/필터 대상</div>}
             </li>
           ))}
         </ul>
