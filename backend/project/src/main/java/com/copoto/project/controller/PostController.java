@@ -33,7 +33,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -252,7 +251,7 @@ public class PostController {
             )
         )
     })
-    public ResponseEntity<ApiResponseCustom<PostResponse>> getPostById(@PathVariable Long postId) {
+    public ResponseEntity<ApiResponseCustom<PostResponse>> getPostById(@PathVariable("postId") Long postId) {
         Post post = postService.getPostById(postId);
         if (post == null) {
             return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, "Post not found", null));
