@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { api } from "../lib/api";
 import ProfileActivityPanel from "../components/ProfileActivityPanel";
+import ProfileEditPopup from "../components/ProfileEditPopup";
 
 function Skeleton({ className = "" }) {
   return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
@@ -21,180 +22,6 @@ function formatDateKR(iso) {
   });
 }
 
-/* ----------------- ✨ 편집 모달 ----------------- */
-function EditProfileModal({ onClose, onNicknameUpdated }) {
-  const [nick, setNick] = useState("");
-  const [nickMsg, setNickMsg] = useState("");
-  const [nickBusy, setNickBusy] = useState(false);
-
-  const [oldPw, setOldPw] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [newPw2, setNewPw2] = useState("");
-  const [pwMsg, setPwMsg] = useState("");
-  const [pwBusy, setPwBusy] = useState(false);
-
-  // 닉네임 변경
-  const submitNickname = async (e) => {
-    e?.preventDefault();
-    const trimmed = nick.trim();
-    if (!trimmed) {
-      setNickMsg("닉네임을 입력하세요.");
-      return;
-    }
-    try {
-      setNickBusy(true);
-      setNickMsg("");
-      const res = await api.put("/user/profile/nickname", { nickname: trimmed });
-      // 성공: 상위 프로필 갱신
-      onNicknameUpdated?.(res?.data?.data?.nickname ?? trimmed);
-      setNickMsg("닉네임이 변경되었습니다.");
-    } catch (err) {
-      const s = err?.response?.status;
-      const fallback = err?.response?.data?.message;
-      const msg =
-        s === 400 ? "닉네임을 입력하세요."
-      : s === 401 ? "잘못된 비밀번호입니다."
-      : s === 403 ? "닉네임에 혐오 표현이 포함되어 있어 변경할 수 없습니다."
-      : s === 405 ? "현재와 동일한 닉네임은 사용할 수 없습니다."
-      : s === 409 ? "이미 사용 중인 닉네임입니다."
-      : fallback || "닉네임 변경 중 오류가 발생했습니다.";
-      setNickMsg(msg);
-    } finally {
-      setNickBusy(false);
-    }
-  };
-
-  // 비밀번호 변경
-  const submitPassword = async (e) => {
-    e?.preventDefault();
-    if (!oldPw || !newPw || !newPw2) {
-      setPwMsg("모든 비밀번호 칸을 입력하세요.");
-      return;
-    }
-    if (newPw !== newPw2) {
-      setPwMsg("새 비밀번호가 서로 일치하지 않습니다.");
-      return;
-    }
-    if (oldPw === newPw) {
-      setPwMsg("현재 비밀번호와 동일한 비밀번호로는 변경할 수 없습니다.");
-      return; // ❗ API 호출 안 함
-    }
-    try {
-      setPwBusy(true);
-      setPwMsg("");
-      await api.put("/user/profile/password", { oldPassword: oldPw, newPassword: newPw });
-      setPwMsg("비밀번호가 변경되었습니다.");
-      setOldPw(""); setNewPw(""); setNewPw2("");
-    } catch (err) {
-      const s = err?.response?.status;
-      const fallback = err?.response?.data?.message;
-      const msg =
-        s === 400 ? "새 비밀번호/현재 비밀번호가 필요합니다."
-      : s === 401 ? "비밀번호가 일치하지 않습니다."
-      : s === 403 ? "현재 비밀번호가 일치하지 않습니다."
-      : fallback || "비밀번호 변경 중 오류가 발생했습니다.";
-      setPwMsg(msg);
-    } finally {
-      setPwBusy(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-2xl bg-white shadow-xl border border-gray-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h3 className="text-base font-semibold">프로필 편집</h3>
-          <button
-            className="text-gray-500 hover:text-gray-700"
-            onClick={onClose}
-            aria-label="close"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="p-5 space-y-6">
-          {/* 닉네임 변경 */}
-          <section>
-            <h4 className="text-sm font-semibold mb-2">닉네임 변경</h4>
-            <form onSubmit={submitNickname} className="flex gap-2">
-              <input
-                type="text"
-                placeholder="새 닉네임"
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2"
-                value={nick}
-                onChange={(e) => setNick(e.target.value)}
-                disabled={nickBusy}
-              />
-              <button
-                type="submit"
-                disabled={nickBusy || !nick.trim()}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${nickBusy || !nick.trim() ? "bg-blue-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-              >
-                변경
-              </button>
-            </form>
-            {nickMsg && (
-              <p className={`mt-2 text-sm ${/변경되었습니다|완료/.test(nickMsg) ? "text-green-600" : "text-red-600"}`}>
-                {nickMsg}
-              </p>
-            )}
-          </section>
-
-          {/* 비밀번호 변경 */}
-          <section>
-            <h4 className="text-sm font-semibold mb-2">비밀번호 변경</h4>
-            <form onSubmit={submitPassword} className="space-y-2">
-              <input
-                type="password"
-                placeholder="현재 비밀번호"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                value={oldPw}
-                onChange={(e) => setOldPw(e.target.value)}
-                disabled={pwBusy}
-              />
-              <input
-                type="password"
-                placeholder="새 비밀번호"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                value={newPw}
-                onChange={(e) => setNewPw(e.target.value)}
-                disabled={pwBusy}
-              />
-              <input
-                type="password"
-                placeholder="새 비밀번호 확인"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                value={newPw2}
-                onChange={(e) => setNewPw2(e.target.value)}
-                disabled={pwBusy}
-              />
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={pwBusy}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${pwBusy ? "bg-blue-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-                >
-                  변경
-                </button>
-              </div>
-            </form>
-            {pwMsg && (
-              <p className={`mt-2 text-sm ${/변경되었습니다/.test(pwMsg) ? "text-green-600" : "text-red-600"}`}>
-                {pwMsg}
-              </p>
-            )}
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-}
-/* ----------------- ✨ 편집 모달 끝 ----------------- */
-
 export default function ProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -202,7 +29,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null); // { id, nickname, createdAt }
   const [isSelf, setIsSelf] = useState(true);
-  const [showEdit, setShowEdit] = useState(false); // ✅ 모달 열림 상태
+  const [showEdit, setShowEdit] = useState(false); // 편집 팝업
 
   useEffect(() => {
     const myUid = window.localStorage.getItem("userid");
@@ -243,6 +70,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
+      {/* 상단 프로필 카드 */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-start gap-6">
           {loading ? (
@@ -289,7 +117,7 @@ export default function ProfilePage() {
                       새 글 쓰기
                     </button>
                     <button
-                      onClick={() => setShowEdit(true)}  // ✅ 모달 열기
+                      onClick={() => setShowEdit(true)}
                       className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-semibold border border-gray-200"
                     >
                       프로필 편집
@@ -302,7 +130,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* 정보 & 활동 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 좌측: 계정 정보 카드 */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <h2 className="text-sm font-semibold text-gray-700 mb-3">계정 정보</h2>
@@ -332,13 +162,22 @@ export default function ProfilePage() {
             <div className="mt-5 border-t pt-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-2">빠른 이동</h3>
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => navigate("/dashboards/notice")} className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50">
+                <button
+                  onClick={() => navigate("/dashboards/notice")}
+                  className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50"
+                >
                   공지사항
                 </button>
-                <button onClick={() => navigate("/dashboards/free")} className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50">
+                <button
+                  onClick={() => navigate("/dashboards/free")}
+                  className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50"
+                >
                   자유게시판
                 </button>
-                <button onClick={() => navigate("/dashboards/qna")} className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50">
+                <button
+                  onClick={() => navigate("/dashboards/qna")}
+                  className="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50"
+                >
                   Q&A
                 </button>
               </div>
@@ -346,16 +185,24 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* 우측: 활동 패널 */}
         <div className="lg:col-span-2">
-          <ProfileActivityPanel userId={profile?.id} isSelf={isSelf} labels={activityLabels} />
+          <ProfileActivityPanel
+            userId={profile?.id}
+            isSelf={isSelf}
+            labels={activityLabels}
+          />
         </div>
       </div>
 
-      {/* ✨ 편집 모달 mount */}
+      {/* 편집 팝업 */}
       {showEdit && (
-        <EditProfileModal
+        <ProfileEditPopup
+          defaultNickname={profile?.nickname || ""}
           onClose={() => setShowEdit(false)}
-          onNicknameUpdated={(newNick) => setProfile((p) => ({ ...p, nickname: newNick }))}
+          onNicknameUpdated={(newNick) =>
+            setProfile((p) => ({ ...(p || {}), nickname: newNick }))
+          }
         />
       )}
     </div>
