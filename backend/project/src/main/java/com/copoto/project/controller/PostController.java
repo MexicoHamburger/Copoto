@@ -188,7 +188,7 @@ public class PostController {
         post.setTitle(request.getTitle());
         post.setContents(request.getContents());
         post.setType(request.getType());
-        post.setView_count(0L);
+        post.setView_count(-1L);
         post.setUser(user);
 
         Post createdPost = postService.createPost(post, user);
