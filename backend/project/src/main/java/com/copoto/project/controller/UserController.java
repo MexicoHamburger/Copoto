@@ -39,7 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/user")
 @CrossOrigin(origins = "http://localhost:3000") // React의 도메인 주소
-@Tag(name = "User API", description = "회원 관리 API")
+@Tag(name = "유저 API", description = "회원 관리 API")
 public class UserController {
 
     @Autowired
