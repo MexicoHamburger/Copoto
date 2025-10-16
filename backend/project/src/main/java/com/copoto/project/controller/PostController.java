@@ -257,6 +257,7 @@ public class PostController {
         if (post == null) {
             return ResponseEntity.status(404).body(new ApiResponseCustom<>(404, "Post not found", null));
         }
+        postService.increaseViewCount(post); // 특정 게시글 조회 API 호출 시 조회수 증가
 
         PostResponse response = new PostResponse();
         response.setPostId(post.getPostId());
