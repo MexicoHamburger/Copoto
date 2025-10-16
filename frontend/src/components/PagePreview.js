@@ -46,14 +46,14 @@ function PagePreview({ page, commentCount = 0, loading = false }) {
   const userId = page?.userId ?? null;
   const postId = page?.postId ?? null;
 
-  // 닉네임 초기값: 캐시 있으면 값, 없으면 undefined(=로딩 필요), userId 없으면 null(=표시 안 함이지만 로딩 완료 판단)
+  // 닉네임 캐시
   const initialNick = useMemo(() => {
     if (!userId) return null;
     return nicknameCache.has(userId) ? nicknameCache.get(userId) : undefined;
   }, [userId]);
   const [nickname, setNickname] = useState(initialNick);
 
-  // 조회수 초기값: 목록에 숫자가 있으면 그대로(완료), 캐시 있으면 캐시, 그 외 undefined(=로딩 필요), postId 없으면 null
+  // 조회수 캐시
   const initialViews = useMemo(() => {
     if (typeof page?.viewCount === "number") return page.viewCount;
     if (!postId) return null;
@@ -61,7 +61,7 @@ function PagePreview({ page, commentCount = 0, loading = false }) {
   }, [postId, page?.viewCount]);
   const [views, setViews] = useState(initialViews);
 
-  // 개별 fetch
+  // 데이터 fetch
   useEffect(() => {
     let mounted = true;
 
@@ -73,7 +73,7 @@ function PagePreview({ page, commentCount = 0, loading = false }) {
           nicknameCache.set(userId, nick);
           if (mounted) setNickname(nick);
         })
-        .catch(() => mounted && setNickname(userId)); // 실패 시 아이디로 대체(=로딩 완료)
+        .catch(() => mounted && setNickname(userId));
     }
 
     if (postId && views === undefined) {
@@ -82,7 +82,7 @@ function PagePreview({ page, commentCount = 0, loading = false }) {
         .then((res) => {
           const cnt = res?.data?.data?.post?.viewCount;
           if (mounted) {
-            const v = typeof cnt === "number" ? cnt : null; // 못받으면 null로 완료 처리
+            const v = typeof cnt === "number" ? cnt : null;
             if (typeof v === "number") viewCountCache.set(postId, v);
             setViews(v);
           }
@@ -90,20 +90,13 @@ function PagePreview({ page, commentCount = 0, loading = false }) {
         .catch(() => mounted && setViews(null));
     }
 
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, postId]);
+    return () => { mounted = false; };
+  }, [userId, postId, nickname, views]);
 
-  // ✅ 모든 준비가 끝났는지 판단 (스켈레톤은 여기서 한 번에 제거)
-  const nickReady = nickname !== undefined;  // undefined면 아직 로딩 중
-  const viewsReady = views !== undefined;    // undefined면 아직 로딩 중
-  const allReady = nickReady && viewsReady;
-
+  // 로딩 여부
+  const allReady = nickname !== undefined && views !== undefined;
   if (loading || !allReady) return <PreviewSkeleton />;
 
-  // ----- 여기부터 실제 카드 -----
   const author = nickname ?? userId ?? "알 수 없음";
   const createdRel = formatRelativeKorean(page?.createdAt);
   const type = page?.type ?? "";
@@ -116,30 +109,50 @@ function PagePreview({ page, commentCount = 0, loading = false }) {
     navigate(`/dashboards/${type}`);
   };
 
-  const handleTitleClick = () => {
+  const handleTitleClick = (e) => {
+    e.stopPropagation();
     navigate(`/pages/${postId}`);
   };
 
+  const handleAuthorClick = (e) => {
+    e.stopPropagation();
+    if (!userId) return;
+    navigate(`/profile?sid=${encodeURIComponent(userId)}`);
+  };
+
   return (
-    <div
-      className="border-b border-gray-200 py-3 hover:bg-gray-50 cursor-pointer transition"
-      onClick={handleTitleClick}
-    >
-      <h1 className="font-semibold text-[15px] text-gray-800 hover:text-blue-700 hover:underline underline-offset-2 decoration-blue-500">
+    <div className="border-b border-gray-200 py-3 transition">
+      {/* 제목 클릭 */}
+      <h1
+        onClick={handleTitleClick}
+        className="font-semibold text-[15px] text-gray-800 hover:text-blue-700 hover:underline underline-offset-2 decoration-blue-500 cursor-pointer"
+      >
         {page?.title} {`[${commentCount}]`}
       </h1>
 
+      {/* 게시판, 작성자, 날짜, 조회수 */}
       <div className="text-sm text-gray-500 mt-0.5 flex items-center gap-1 flex-wrap">
+        {/* 게시판 */}
         <span
           onClick={handleTypeClick}
           className="text-blue-600 hover:underline cursor-pointer"
         >
           {typeLabel}
         </span>
+
         <span className="text-gray-300">/</span>
-        <span>{author}</span>
+
+        {/* 작성자 */}
+        <span
+          onClick={handleAuthorClick}
+          className="hover:underline cursor-pointer text-gray-700"
+        >
+          {author}
+        </span>
+
         <span className="text-gray-300">·</span>
         <time>{createdRel}</time>
+
         {typeof views === "number" && (
           <>
             <span className="text-gray-300">·</span>
@@ -148,7 +161,8 @@ function PagePreview({ page, commentCount = 0, loading = false }) {
         )}
       </div>
 
-      <p className="text-gray-700 text-[14px] mt-1 line-clamp-2">
+      {/* 본문 내용 (클릭 안 됨) */}
+      <p className="text-gray-700 text-[14px] mt-1 line-clamp-2 select-text">
         {page?.contents}
       </p>
     </div>

@@ -16,6 +16,17 @@ function TopBar() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const goMyPage = () => {
+        const sid = window.localStorage.getItem("userid");
+        if (!sid) {
+            // 토큰은 있는데 sid가 비어있는 예외 방지
+            window.localStorage.setItem("afterLogin", location.pathname + location.search);
+            navigate("/login");
+            return;
+        }
+        navigate(`/profile?sid=${encodeURIComponent(sid)}`);
+    };
+
     const refreshHasToken = () => {
         const token = window.localStorage.getItem("accessToken");
         setHasToken(!!token);
@@ -152,7 +163,7 @@ function TopBar() {
                                     로그아웃
                                 </button>
                                 <button
-                                    onClick={() => navigate("/profile")}
+                                    onClick={goMyPage}
                                     className="px-3 py-2 rounded-full bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
                                 >
                                     마이페이지

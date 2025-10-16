@@ -2,48 +2,63 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 /**
- * 활동 탭 껍데기 컴포넌트
- * - posts / comments / bookmarks 탭 제공
- * - 로딩 스켈레톤 / 빈 상태 / 리스트 UI 준비
- * - API 연동은 TODO 표시된 곳에 맞춰 추가
+ * 활동 탭 컴포넌트
+ * props:
+ *  - userId: 프로필 대상 사용자 ID
+ *  - isSelf?: boolean (내 프로필인지 여부) — 라벨 기본값에만 영향
+ *  - labels?: { posts?: string, comments?: string, scraps?: string }  // 라벨 오버라이드
+ *
+ *  예) 타인 프로필에서:
+ *    <ProfileActivityPanel
+ *      userId="someone"
+ *      isSelf={false}
+ *      labels={{ posts: "작성한 게시글", comments: "작성한 댓글", scraps: "스크랩" }}
+ *    />
  */
-export default function ProfileActivityPanel({ userId }) {
+export default function ProfileActivityPanel({ userId, isSelf = true, labels }) {
   const navigate = useNavigate();
 
   // 탭 상태: "posts" | "comments" | "bookmarks"
   const [tab, setTab] = useState("posts");
 
-  // 로딩/데이터 상태 (초기 비어 있음)
+  // 로딩/데이터 상태
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState([]);         // [{postId, title, createdAt, viewCount, userId}, ...]
   const [comments, setComments] = useState([]);   // [{commentId, postId, content, createdAt, userId}, ...]
   const [bookmarks, setBookmarks] = useState([]); // [{postId, title, createdAt, viewCount, userId}, ...]
 
-  // 탭 전환 시마다 불릴 자리(지금은 껍데기만, 실제 API 나오면 여기서 호출)
+  // ✅ 라벨: props.labels가 오면 덮어쓰기, 아니면 isSelf에 맞는 기본값
+  const defaultLabels = isSelf
+    ? { posts: "내 게시글", comments: "내 댓글", scraps: "내 스크랩" }
+    : { posts: "작성한 게시글", comments: "작성한 댓글", scraps: "스크랩" };
+  const effectiveLabels = { ...defaultLabels, ...(labels || {}) };
+
+  // 탭 전환/유저 변경 시 데이터 로드 (API 붙일 자리)
   useEffect(() => {
     let mounted = true;
-
     async function fetchData() {
       setLoading(true);
       try {
-        // TODO: API 나오면 아래 형태로 채워주세요.
-        // 예시:
+        // TODO: 실제 API 연동
         // if (tab === "posts") {
         //   const res = await api.get(`/user/${userId}/posts?limit=10`);
         //   if (!mounted) return;
         //   setPosts(res.data?.data ?? []);
+        // } else if (tab === "comments") {
+        //   const res = await api.get(`/user/${userId}/comments?limit=10`);
+        //   if (!mounted) return;
+        //   setComments(res.data?.data ?? []);
+        // } else if (tab === "bookmarks") {
+        //   const res = await api.get(`/user/${userId}/bookmarks?limit=10`);
+        //   if (!mounted) return;
+        //   setBookmarks(res.data?.data ?? []);
         // }
-        // if (tab === "comments") { ... }
-        // if (tab === "bookmarks") { ... }
-
-        // 지금은 껍데기만이므로 아무 것도 안 함.
       } catch (e) {
         console.error("활동 데이터 로드 실패:", e);
       } finally {
         if (mounted) setLoading(false);
       }
     }
-
     fetchData();
     return () => { mounted = false; };
   }, [tab, userId]);
@@ -92,9 +107,9 @@ export default function ProfileActivityPanel({ userId }) {
       {/* 탭 */}
       <div className="flex items-center gap-2 px-2 pt-2">
         {[
-          { key: "posts", label: "내 게시글" },
-          { key: "comments", label: "내 댓글" },
-          { key: "bookmarks", label: "스크랩" },
+          { key: "posts", label: effectiveLabels.posts },
+          { key: "comments", label: effectiveLabels.comments },
+          { key: "bookmarks", label: effectiveLabels.scraps },
         ].map((t) => {
           const active = tab === t.key;
           return (
@@ -129,7 +144,7 @@ export default function ProfileActivityPanel({ userId }) {
                 {posts.length ? (
                   posts.map((p) => <PostItem key={p.postId} item={p} />)
                 ) : (
-                  <EmptyHint text="아직 불러올 게시글이 없습니다. API 연동 후 표시됩니다." />
+                  <EmptyHint text="표시할 게시글이 없습니다." />
                 )}
               </div>
             )}
@@ -139,7 +154,7 @@ export default function ProfileActivityPanel({ userId }) {
                 {comments.length ? (
                   comments.map((c) => <CommentItem key={c.commentId} item={c} />)
                 ) : (
-                  <EmptyHint text="아직 불러올 댓글이 없습니다. API 연동 후 표시됩니다." />
+                  <EmptyHint text="표시할 댓글이 없습니다." />
                 )}
               </div>
             )}
@@ -149,7 +164,7 @@ export default function ProfileActivityPanel({ userId }) {
                 {bookmarks.length ? (
                   bookmarks.map((b) => <PostItem key={b.postId} item={b} />)
                 ) : (
-                  <EmptyHint text="아직 불러올 스크랩이 없습니다. API 연동 후 표시됩니다." />
+                  <EmptyHint text="표시할 스크랩이 없습니다." />
                 )}
               </div>
             )}
@@ -161,11 +176,7 @@ export default function ProfileActivityPanel({ userId }) {
 }
 
 function EmptyHint({ text }) {
-  return (
-    <div className="p-6 text-sm text-gray-500">
-      {text}
-    </div>
-  );
+  return <div className="p-6 text-sm text-gray-500">{text}</div>;
 }
 
 function formatDateKR(iso) {
@@ -173,7 +184,10 @@ function formatDateKR(iso) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "-";
   return d.toLocaleString("ko-KR", {
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit"
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }

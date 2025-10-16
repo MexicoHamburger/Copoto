@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../lib/api";
+import { useNavigate } from "react-router";
 
 /* ===== 닉네임 유틸 ===== */
 const nicknameCache = new Map();
@@ -64,6 +65,7 @@ export default function CommentsSection({ postId }) {
   const isLoggedIn = !!window.localStorage.getItem("accessToken");
   const myUserId = window.localStorage.getItem("userid") || "";
 
+  const navigate = useNavigate();
   const loadComments = useCallback(async () => {
     if (!postId) return;
     try {
@@ -150,10 +152,10 @@ export default function CommentsSection({ postId }) {
       const s = e?.response?.status;
       const msg =
         s === 401 ? "로그인이 필요합니다."
-        : s === 403 ? "이 댓글을 수정할 권한이 없습니다."
-        : s === 404 ? "댓글을 찾을 수 없습니다."
-        : s === 405 ? (e?.response?.data?.message || "혐오 발언이 감지되어 수정되지 않았습니다.")
-        : "댓글 수정 중 오류가 발생했습니다.";
+          : s === 403 ? "이 댓글을 수정할 권한이 없습니다."
+            : s === 404 ? "댓글을 찾을 수 없습니다."
+              : s === 405 ? (e?.response?.data?.message || "혐오 발언이 감지되어 수정되지 않았습니다.")
+                : "댓글 수정 중 오류가 발생했습니다.";
       setEditErr(msg);
       setEditSubmitting(false);
     }
@@ -183,9 +185,9 @@ export default function CommentsSection({ postId }) {
       const s = e?.response?.status;
       const msg =
         s === 401 ? "로그인이 필요합니다."
-        : s === 403 ? "이 댓글을 삭제할 권한이 없습니다."
-        : s === 404 ? "댓글을 찾을 수 없습니다."
-        : "댓글 삭제 중 오류가 발생했습니다.";
+          : s === 403 ? "이 댓글을 삭제할 권한이 없습니다."
+            : s === 404 ? "댓글을 찾을 수 없습니다."
+              : "댓글 삭제 중 오류가 발생했습니다.";
       setDeleteErr(msg);
       setDeleting(false);
     }
@@ -252,9 +254,13 @@ export default function CommentsSection({ postId }) {
               <li key={c.commentId} className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
                 {/* 헤더: 닉네임 | (수정/삭제) 날짜 */}
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/profile?sid=${encodeURIComponent(c.userId)}`)}
+                    className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline underline-offset-2"
+                  >
                     {nicknameMap[c.userId] ?? c.userId ?? "익명"}
-                  </div>
+                  </button>
                   <div className="flex items-center gap-2">
                     {isMine && (
                       <>
