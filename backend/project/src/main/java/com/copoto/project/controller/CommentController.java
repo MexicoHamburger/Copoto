@@ -636,7 +636,7 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponseCustom<Void>> deleteComment(
         @Parameter(description = "댓글 ID", example = "1", required = true)
-        @PathVariable Long commentId,
+        @PathVariable("commentId") Long commentId,
         Authentication authentication // 인증 객체 자동 주입
     ) {
         if (authentication == null || !(authentication.getPrincipal() instanceof User)) {

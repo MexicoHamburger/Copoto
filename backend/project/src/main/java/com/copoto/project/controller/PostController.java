@@ -639,7 +639,7 @@ public class PostController {
         )
     })
     public ResponseEntity<ApiResponseCustom<Void>> deletePost(
-        @PathVariable Long postId,
+        @PathVariable("postId") Long postId,
         Authentication authentication // 인증 객체 자동 주입
     ) {
         // 인증된 사용자 정보 추출
