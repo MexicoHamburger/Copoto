@@ -1,74 +1,81 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { api } from "../lib/api";
 
 /**
  * 활동 탭 컴포넌트
  * props:
  *  - userId: 프로필 대상 사용자 ID
- *  - isSelf?: boolean (내 프로필인지 여부) — 라벨 기본값에만 영향
- *  - labels?: { posts?: string, comments?: string, scraps?: string }  // 라벨 오버라이드
- *
- *  예) 타인 프로필에서:
- *    <ProfileActivityPanel
- *      userId="someone"
- *      isSelf={false}
- *      labels={{ posts: "작성한 게시글", comments: "작성한 댓글", scraps: "스크랩" }}
- *    />
+ *  - isSelf?: boolean
+ *  - labels?: { posts?: string, comments?: string, scraps?: string }
  */
 export default function ProfileActivityPanel({ userId, isSelf = true, labels }) {
   const navigate = useNavigate();
 
-  // 탭 상태: "posts" | "comments" | "bookmarks"
-  const [tab, setTab] = useState("posts");
-
-  // 로딩/데이터 상태
+  const [tab, setTab] = useState("posts"); // "posts" | "comments" | "bookmarks"
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState([]);         // [{postId, title, createdAt, viewCount, userId}, ...]
   const [comments, setComments] = useState([]);   // [{commentId, postId, content, createdAt, userId}, ...]
-  const [bookmarks, setBookmarks] = useState([]); // [{postId, title, createdAt, viewCount, userId}, ...]
+  const [bookmarks, setBookmarks] = useState([]); // TBD
 
-  // ✅ 라벨: props.labels가 오면 덮어쓰기, 아니면 isSelf에 맞는 기본값
   const defaultLabels = isSelf
     ? { posts: "내 게시글", comments: "내 댓글", scraps: "내 스크랩" }
     : { posts: "작성한 게시글", comments: "작성한 댓글", scraps: "스크랩" };
   const effectiveLabels = { ...defaultLabels, ...(labels || {}) };
 
-  // 탭 전환/유저 변경 시 데이터 로드 (API 붙일 자리)
+  // ===== 데이터 로드 =====
   useEffect(() => {
+    if (!userId) return;
     let mounted = true;
+
     async function fetchData() {
       setLoading(true);
       try {
-        // TODO: 실제 API 연동
-        // if (tab === "posts") {
-        //   const res = await api.get(`/user/${userId}/posts?limit=10`);
-        //   if (!mounted) return;
-        //   setPosts(res.data?.data ?? []);
-        // } else if (tab === "comments") {
-        //   const res = await api.get(`/user/${userId}/comments?limit=10`);
-        //   if (!mounted) return;
-        //   setComments(res.data?.data ?? []);
-        // } else if (tab === "bookmarks") {
-        //   const res = await api.get(`/user/${userId}/bookmarks?limit=10`);
-        //   if (!mounted) return;
-        //   setBookmarks(res.data?.data ?? []);
-        // }
+        if (tab === "posts") {
+          // 관례적 엔드포인트: /post/user/{userId}
+          // 응답 예시 가정: { status, message, data: [{postId, title, createdAt, viewCount, userId}, ...] }
+          try {
+            const res = await api.get(`/post/user/${encodeURIComponent(userId)}`);
+            if (!mounted) return;
+            const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+            setPosts(list);
+          } catch {
+            // 엔드포인트가 없거나 실패하면 빈 목록
+            if (mounted) setPosts([]);
+          }
+        } else if (tab === "comments") {
+          // 문서 제공된 엔드포인트
+          const res = await api.get(`/comment/user/${encodeURIComponent(userId)}`);
+          if (!mounted) return;
+          const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+          setComments(list);
+        } else if (tab === "bookmarks") {
+          // TODO: 스크랩 API 생기면 여기서 호출
+          // 예: const res = await api.get(`/user/${userId}/bookmarks`);
+          // setBookmarks(res.data?.data ?? []);
+          setBookmarks([]);
+        }
       } catch (e) {
         console.error("활동 데이터 로드 실패:", e);
+        if (mounted) {
+          if (tab === "posts") setPosts([]);
+          if (tab === "comments") setComments([]);
+          if (tab === "bookmarks") setBookmarks([]);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
     }
+
     fetchData();
     return () => { mounted = false; };
   }, [tab, userId]);
 
-  // 공용 스켈레톤
+  // ===== 공용 UI =====
   const SkeletonLine = ({ w = "w-3/4" }) => (
     <div className={`h-4 ${w} bg-gray-200 rounded animate-pulse`} />
   );
 
-  // 리스트 아이템(게시글/스크랩)
   const PostItem = ({ item }) => (
     <button
       onClick={() => navigate(`/pages/${item.postId}`)}
@@ -84,7 +91,6 @@ export default function ProfileActivityPanel({ userId, isSelf = true, labels }) 
     </button>
   );
 
-  // 리스트 아이템(댓글)
   const CommentItem = ({ item }) => (
     <button
       onClick={() => navigate(`/pages/${item.postId}`)}
@@ -129,7 +135,7 @@ export default function ProfileActivityPanel({ userId, isSelf = true, labels }) 
         })}
       </div>
 
-      {/* 리스트 영역 */}
+      {/* 리스트 */}
       <div className="mt-2">
         {loading ? (
           <div className="p-4 space-y-3">
