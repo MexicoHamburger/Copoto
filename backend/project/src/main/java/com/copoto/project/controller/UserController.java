@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.copoto.project.dto.ApiResponseCustom;
 import com.copoto.project.dto.CommentResponse;
@@ -71,6 +75,27 @@ public class UserController {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+
+    // AI 혐오 검출 API 호출 메서드 (PostController의 isHateSpeech와 동일)
+    private boolean isHateSpeech(String text) {
+        String flaskApiUrl = "http://127.0.0.1:5000/predict";
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String payload = "{\"text\":\"" + text + "\"}";
+        HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(flaskApiUrl, entity, Map.class);
+            Map<String, Object> result = response.getBody();
+            Integer isHate = result != null ? (Integer) result.get("is_hate") : null;
+            return isHate != null && isHate == 1;
+        } catch (Exception e) {
+            // API 호출 실패 시 일단 혐오발언 아님으로 처리하거나 적절히 처리
+            return false;
+        }
+    }
+
     @PostMapping("/register")
     @Operation(summary = "회원 가입 - auth를 필요로하지 않습니다.", description = "새로운 회원을 등록합니다.")
     @ApiResponses({
@@ -116,6 +141,23 @@ public class UserController {
                     }
                 """)
             )
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "닉네임 혐오표현 존재",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 403,
+                        "message": "닉네임에 혐오 발언이 포함되어 있어 회원가입이 거부되었습니다.",
+                        "data": {
+                            "id": "badㅇ112ㅇNick",
+                            "nickname": "개병신호로새끼",
+                            "createdAt": null
+                        }
+                    }
+                """)
+            )
         )
     })
     public ResponseEntity<ApiResponseCustom<UserResponse>> register(@RequestBody RegisterRequest request) {
@@ -127,6 +169,15 @@ public class UserController {
         }
         if (request.getNickname() == null || request.getNickname().isEmpty()) {
             return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Nickname is required", null));
+        }
+
+        // 닉네임 혐오발언 검출
+        if (isHateSpeech(request.getNickname())) {
+            UserResponse response = new UserResponse();
+            response.setId(request.getId());
+            response.setNickname(request.getNickname());
+            return ResponseEntity.status(403).body(
+                new ApiResponseCustom<>(403, "닉네임에 혐오 발언이 포함되어 있어 회원가입이 거부되었습니다.", response));
         }
 
         try {
