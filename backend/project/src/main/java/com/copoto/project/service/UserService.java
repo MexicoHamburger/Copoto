@@ -55,6 +55,36 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
     }
 
+    // 닉네임 수정 (Update)
+    @Transactional
+    public User updateNickname(String userId, String newNickname) {
+        // 닉네임 중복 검사
+        if (userRepository.existsByNickname(newNickname)) {
+            throw new IllegalArgumentException("Nickname is already in use");
+        }
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        user.setNickname(newNickname);
+        return userRepository.save(user);
+    }
+
+    // 비밀번호 수정 (Update)
+    @Transactional
+    public void updatePassword(String userId, String oldPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        // 현재 비밀번호 확인
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password does not match");
+        }
+        
+        // 새 비밀번호 암호화 및 설정
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 
     // 단일 리프레시 토큰 관리(기존 토큰 삭제 후 새 토큰 발급)
     @Transactional(propagation = Propagation.REQUIRED)

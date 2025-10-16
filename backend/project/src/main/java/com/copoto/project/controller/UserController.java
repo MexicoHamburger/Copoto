@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +31,7 @@ import com.copoto.project.dto.UserProfileResponse;
 import com.copoto.project.dto.UserResponse;
 import com.copoto.project.dto.VerifyIDRequest;
 import com.copoto.project.dto.VerifyNicknameRequest;
+import com.copoto.project.dto.UpdatePasswordRequest;
 import com.copoto.project.dto.post.PostResponse;
 import com.copoto.project.entity.Comment;
 import com.copoto.project.entity.Post;
@@ -664,7 +666,208 @@ public class UserController {
         }
     }
 
+    @PutMapping("/profile/nickname")
+    @Operation(summary = "닉네임 변경 - auth를 필요로합니다.", description = "현재 로그인된 유저의 닉네임을 변경합니다.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "닉네임 변경 성공 - Nickname updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "status": 200,
+                                        "message": "Nickname updated successfully",
+                                        "data": {
+                                            "id": "test10",
+                                            "nickname": "새로운닉네임",
+                                            "createdAt": "2025-10-16T19:40:01.488466"
+                                        }
+                                    }
+                                    """))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "RequestBody에 닉네임이 없습니다 - Nickname is required",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "status": 400,
+                                        "message": "Nickname is required",
+                                        "data": null
+                                    }
+                                    """))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증되지 않은 사용자입니다 - User not authenticated",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "status": 401,
+                                        "message": "User not authenticated",
+                                        "data": null
+                                    }
+                                    """))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "닉네임에 혐오 표현이 포함되어 있어 변경할 수 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "status": 403,
+                                        "message": "닉네임에 혐오 표현이 포함되어 있어 변경할 수 없습니다.",
+                                        "data": null
+                                    }
+                                    """))
+            ),
+            @ApiResponse(
+                    responseCode = "405",
+                    description = "현재와 동일한 닉네임을 사용할 수 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "status": 405,
+                                        "message": "현재와 동일한 닉네임을 사용할 수 없습니다.",
+                                        "data": null
+                                    }
+                                    """))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "이미 사용 중인 닉네임입니다 - Nickname is already in use",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "status": 409,
+                                        "message": "Nickname is already in use",
+                                        "data": null
+                                    }
+                                    """))
+            )
+    })
+    public ResponseEntity<ApiResponseCustom<UserResponse>> updateNickname(
+            Authentication authentication,
+            @RequestBody VerifyNicknameRequest request) { // 닉네임 하나만 받으므로 VerifyNicknameRequest 재사용
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(new ApiResponseCustom<>(401, "User not authenticated", null));
+        }
 
+        if (request.getNickname() == null || request.getNickname().isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Nickname is required", null));
+        }
+
+        // 닉네임 혐오발언 검출
+        if (isHateSpeech(request.getNickname())) {
+            return ResponseEntity.status(403).body(
+                    new ApiResponseCustom<>(403, "닉네임에 혐오 표현이 포함되어 있어 변경할 수 없습니다.", null));
+        }
+
+        try {
+            User user = (User) authentication.getPrincipal();
+
+            if (user.getNickname().equals(request.getNickname())) {
+                return ResponseEntity.status(405).body(
+                    new ApiResponseCustom<>(405, "현재와 동일한 닉네임을 사용할 수 없습니다.", null));
+            }
+
+            User updatedUser = userService.updateNickname(user.getId(), request.getNickname());
+            
+            UserResponse response = new UserResponse();
+            response.setId(updatedUser.getId());
+            response.setNickname(updatedUser.getNickname());
+            response.setCreatedAt(updatedUser.getCreatedAt());
+
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Nickname updated successfully", response));
+
+        } catch (IllegalArgumentException e) {
+            // 서비스단에서 닉네임 중복 시 IllegalArgumentException 발생 예상
+            return ResponseEntity.status(409).body(new ApiResponseCustom<>(409, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponseCustom<>(500, "An unexpected error occurred", null));
+        }
+    }
+
+    @PutMapping("/profile/password")
+    @Operation(summary = "비밀번호 변경 - auth를 필요로합니다.", description = "현재 로그인된 유저의 비밀번호를 변경합니다.")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "비밀번호 변경 성공 - Password updated successfully",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "Password updated successfully",
+                        "data": null
+                    }
+                    """))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "RequestBody에 비밀번호가 없습니다 - (New/Old) password is required",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 400,
+                        "message": "New password is required",
+                        "data": null
+                    }
+                    """))
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자 - User not authenticated",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 401,
+                        "message": "User not authenticated",
+                        "data": null
+                    }
+                    """))
+        ),
+        @ApiResponse(
+            responseCode = "403",
+            description = "현재 비밀번호 불일치 - Current password does not match",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 403,
+                        "message": "Current password does not match",
+                        "data": null
+                    }
+                    """))
+        )
+    })
+    public ResponseEntity<ApiResponseCustom<Void>> updatePassword(
+        Authentication authentication, 
+        @RequestBody UpdatePasswordRequest request) {
+
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(new ApiResponseCustom<>(401, "User not authenticated", null));
+        }
+
+        if (request.getOldPassword() == null || request.getOldPassword().isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Old password is required", null));
+        }
+        if (request.getNewPassword() == null || request.getNewPassword().isEmpty()) {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "New password is required", null));
+        }
+
+        try {
+            User user = (User) authentication.getPrincipal();
+            userService.updatePassword(user.getId(), request.getOldPassword(), request.getNewPassword());
+            
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "Password updated successfully", null));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(401).body(new ApiResponseCustom<>(403, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponseCustom<>(500, "An unexpected error occurred", null));
+        }
+    }
     
     @GetMapping("/all")
     @Operation(summary = "전체 회원 조회", description = "모든 회원 정보를 반환합니다.")
