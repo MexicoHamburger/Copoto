@@ -29,7 +29,11 @@ public class Post {
     private Long postId; // Long 타입으로 변경 (AUTO_INCREMENT가 일반적으로 숫자를 사용함)
 
     private String title;
+
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String contents;
+
+
     private String type;
     private Long view_count;
 
