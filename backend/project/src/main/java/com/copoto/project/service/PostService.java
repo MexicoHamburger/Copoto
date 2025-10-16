@@ -26,8 +26,14 @@ public class PostService {
     public Post getPostById(Long postId) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException("Post not found"));
-        post.setView_count(post.getView_count() + 1L);
+        // post.setView_count(post.getView_count() + 1L);
         return postRepository.save(post);
+    }
+
+    // 게시글 조회 API 호출 시 조회수 증가 메서드
+    public void increaseViewCount(Post post) {
+        post.setView_count(post.getView_count() + 1L);
+        postRepository.save(post);
     }
 
     // 특정 게시판의 게시글 조회 (Read)
