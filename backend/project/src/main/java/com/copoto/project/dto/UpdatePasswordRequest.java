@@ -2,7 +2,7 @@ package com.copoto.project.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "유저 닉네임 중복여부 확인 DTO")
+@Schema(description = "유저 비밀번호 변경 DTO")
 public class UpdatePasswordRequest {
     @Schema(description = "현재 비밀번호", example = "oldpassword", required = true)
     private String oldPassword;

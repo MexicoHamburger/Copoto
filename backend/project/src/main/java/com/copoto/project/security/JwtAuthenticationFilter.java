@@ -34,10 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 FilterChain filterChain) throws ServletException, IOException {
 
         // 모든 GET 요청을 인증 검증 없이 통과시킴
-        if ("GET".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        // if ("GET".equalsIgnoreCase(request.getMethod())) {
+        //     filterChain.doFilter(request, response);
+        //     return;
+        // }
         
         String header = request.getHeader("Authorization");
         logger.debug("JwtAuthenticationFilter - Authorization header: {}" + header); // 적절함
