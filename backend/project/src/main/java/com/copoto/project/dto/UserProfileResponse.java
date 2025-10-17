@@ -21,6 +21,9 @@ public class UserProfileResponse {
     @Schema(description = "생성 일시", example = "2025-01-01T13:11:23.703Z")
     private LocalDateTime createdAt;
 
+    @Schema(description = "게시글/댓글 숨김 여부", example = "false")
+    private Boolean hide;
+
     @Schema(description = "작성한 게시물들", example = "")
     private List<PostResponse> posts;
 

@@ -1,5 +1,6 @@
 package com.copoto.project.controller;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import com.copoto.project.dto.UserResponse;
 import com.copoto.project.dto.VerifyIDRequest;
 import com.copoto.project.dto.VerifyNicknameRequest;
 import com.copoto.project.dto.UpdatePasswordRequest;
+import com.copoto.project.dto.UpdateHideRequest;
 import com.copoto.project.dto.post.PostResponse;
 import com.copoto.project.entity.Comment;
 import com.copoto.project.entity.Post;
@@ -112,7 +114,8 @@ public class UserController {
                         "data": {
                             "id": "test10",
                             "nickname": "테스트10",
-                            "createdAt": "2025-10-16T19:40:01.488466"
+                            "createdAt": "2025-10-16T19:40:01.488466",
+                            "hide" : false
                         }
                     }
                 """)
@@ -193,6 +196,7 @@ public class UserController {
             response.setId(registeredUser.getId());
             response.setNickname(registeredUser.getNickname());
             response.setCreatedAt(registeredUser.getCreatedAt());
+            response.setHide(registeredUser.getHide());
 
             return ResponseEntity.ok(new ApiResponseCustom<>(200, "User registered successfully", response));
         } catch (IllegalArgumentException e) {
@@ -408,11 +412,11 @@ public class UserController {
     //이제 프로필 검색 개선해야함
 
     @GetMapping("/profile/{id}")
-    @Operation(summary = "개인 프로필 - auth를 필요로 하지 않습니다", description = "검색한 유저의 프로필을 가져옵니다")
+    @Operation(summary = "개인 프로필 - auth를 선택적으로 요구합니다.", description = "검색한 유저의 프로필을 가져옵니다")
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "해당 유저의 정보를 가져옵니다 - User profile found",
+            description = "해당 유저의 정보를 가져옵니다 - User profile fetched successfully",
             content = @Content(mediaType = "application/json",
                 examples = @ExampleObject(value = """
                         {
@@ -422,6 +426,7 @@ public class UserController {
                                 "id": "showmethemoney",
                                 "nickname": "쇼미더머니",
                                 "createdAt": "2025-10-16T20:49:42.924343",
+                                "hide": false,
                                 "posts": [
                                     {
                                         "postId": 22,
@@ -503,6 +508,7 @@ public class UserController {
         )
     })
     public ResponseEntity<ApiResponseCustom<UserProfileResponse>> getUserProfile(
+        Authentication authentication,
         @Parameter(description = "User ID", example = "user123", required = true)
         @PathVariable("id") String id
     ) {
@@ -510,40 +516,58 @@ public class UserController {
             // Fetch user entity
             User user = userService.getUserById(id);
 
-            // Fetch all posts by user
-            List<Post> posts = postService.getPostsByUser(user);
-            List<PostResponse> postResponses = posts.stream().map(post -> {
-                PostResponse postRes = new PostResponse();
-                postRes.setPostId(post.getPostId());
-                postRes.setTitle(post.getTitle());
-                postRes.setContents(post.getContents());
-                postRes.setType(post.getType());
-                postRes.setUserId(post.getUser().getId());
-                postRes.setViewCount(post.getView_count());
-                postRes.setCreatedAt(post.getCreatedAt());
-                postRes.setUpdatedAt(post.getUpdatedAt());
-                return postRes;
-            }).collect(Collectors.toList());
-
-            // Fetch all comments by user
-            List<Comment> comments = commentService.getCommentsByUser(user);
-            List<CommentResponse> commentResponses = comments.stream().map(comment -> {
-                CommentResponse commentRes = new CommentResponse();
-                commentRes.setCommentId(comment.getId());
-                commentRes.setContent(comment.getContent());
-                commentRes.setUserId(comment.getUser().getId());
-                commentRes.setPostId(comment.getPost().getPostId());
-                commentRes.setCreatedAt(comment.getCreatedAt());
-                return commentRes;
-            }).collect(Collectors.toList());
+            // 2. 조회자(Viewer) ID 확인
+            String viewerId = null;
+            if (authentication != null) {
+                User viewer = (User) authentication.getPrincipal();
+                viewerId = viewer.getId();
+            }
 
             // Compose the user profile response DTO
             UserProfileResponse profile = new UserProfileResponse();
             profile.setId(user.getId());
             profile.setNickname(user.getNickname());
             profile.setCreatedAt(user.getCreatedAt());
-            profile.setPosts(postResponses);
-            profile.setComments(commentResponses);
+            profile.setHide(user.getHide());
+
+            boolean isMe = user.getId().equals(viewerId);
+
+            if (isMe || !user.getHide()) {
+                // Fetch all posts by user
+                List<Post> posts = postService.getPostsByUser(user);
+                List<PostResponse> postResponses = posts.stream().map(post -> {
+                    PostResponse postRes = new PostResponse();
+                    postRes.setPostId(post.getPostId());
+                    postRes.setTitle(post.getTitle());
+                    postRes.setContents(post.getContents());
+                    postRes.setType(post.getType());
+                    postRes.setUserId(post.getUser().getId());
+                    postRes.setViewCount(post.getView_count());
+                    postRes.setCreatedAt(post.getCreatedAt());
+                    postRes.setUpdatedAt(post.getUpdatedAt());
+                    return postRes;
+                }).collect(Collectors.toList());
+
+                // Fetch all comments by user
+                List<Comment> comments = commentService.getCommentsByUser(user);
+                List<CommentResponse> commentResponses = comments.stream().map(comment -> {
+                    CommentResponse commentRes = new CommentResponse();
+                    commentRes.setCommentId(comment.getId());
+                    commentRes.setContent(comment.getContent());
+                    commentRes.setUserId(comment.getUser().getId());
+                    commentRes.setPostId(comment.getPost().getPostId());
+                    commentRes.setCreatedAt(comment.getCreatedAt());
+                    return commentRes;
+                }).collect(Collectors.toList());
+
+                profile.setPosts(postResponses);
+                profile.setComments(commentResponses);
+            }
+            else {
+                // 프로필이 비공개 상태이면 빈 리스트로 설정
+                profile.setPosts(Collections.emptyList());
+                profile.setComments(Collections.emptyList());
+            }
 
             return ResponseEntity.ok(new ApiResponseCustom<>(200, "User profile fetched successfully", profile));
         } catch (IllegalArgumentException e) {
@@ -680,7 +704,8 @@ public class UserController {
                                         "data": {
                                             "id": "test10",
                                             "nickname": "새로운닉네임",
-                                            "createdAt": "2025-10-16T19:40:01.488466"
+                                            "createdAt": "2025-10-16T19:40:01.488466",
+                                            "hide": false
                                         }
                                     }
                                     """))
@@ -778,6 +803,7 @@ public class UserController {
             response.setId(updatedUser.getId());
             response.setNickname(updatedUser.getNickname());
             response.setCreatedAt(updatedUser.getCreatedAt());
+            response.setHide(updatedUser.getHide());
 
             return ResponseEntity.ok(new ApiResponseCustom<>(200, "Nickname updated successfully", response));
 
@@ -868,6 +894,79 @@ public class UserController {
             return ResponseEntity.status(500).body(new ApiResponseCustom<>(500, "An unexpected error occurred", null));
         }
     }
+
+    @PutMapping("/profile/hide")
+    @Operation(summary = "게시글/댓글 공개 상태 변경 - auth를 필요로합니다.", description = "현재 로그인된 유저의 게시글/댓글을 공개 또는 숨김 처리합니다.")
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "상태 변경 성공",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 200,
+                        "message": "프로필 상태가 성공적으로 변경되었습니다.",
+                        "data": {
+                            "id": "testUser",
+                            "nickname": "테스트유저",
+                            "createdAt": "2025-10-17T20:24:39.328593",
+                            "hide": true
+                        }
+                    }
+                    """))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "RequestBody에 hide 필드가 없습니다 - Hide is required",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 400,
+                        "message": "Hide is required",
+                        "data": null
+                    }
+                    """))
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "인증되지 않은 사용자 - User not authenticated",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(value = """
+                    {
+                        "status": 401,
+                        "message": "User not authenticated",
+                        "data": null
+                    }
+                    """))
+        ),
+    })
+    public ResponseEntity<ApiResponseCustom<UserResponse>> setProfileVisibility(
+            Authentication authentication, 
+            @RequestBody UpdateHideRequest request) {
+                
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(new ApiResponseCustom<>(401, "User not authenticated", null));
+        }
+
+        if (request.getHide() == null) {
+            return ResponseEntity.status(400).body(new ApiResponseCustom<>(400, "Hide is required", null));
+        }
+
+        try {
+            User currentUser = (User) authentication.getPrincipal();
+            User updatedUser = userService.setProfileVisibility(currentUser.getId(), request.getHide());
+
+            UserResponse response = new UserResponse();
+            response.setId(updatedUser.getId());
+            response.setNickname(updatedUser.getNickname());
+            response.setCreatedAt(updatedUser.getCreatedAt());
+            response.setHide(updatedUser.getHide());
+
+            return ResponseEntity.ok(new ApiResponseCustom<>(200, "프로필 상태가 성공적으로 변경되었습니다.", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponseCustom<>(500, "An unexpected error occurred", null));
+        }
+    }
     
     @GetMapping("/all")
     @Operation(summary = "전체 회원 조회", description = "모든 회원 정보를 반환합니다.")
@@ -885,13 +984,15 @@ public class UserController {
                                 "id": "user1",
                                 "password": "hashedPassword1",
                                 "nickname": "SKKUniv쓲빢",
-                                "createdAt": "2023-01-01T12:00:00"
+                                "createdAt": "2023-01-01T12:00:00",
+                                "hide": false
                             },
                             {
                                 "id": "user2",
                                 "password": "hashedPassword2",
                                 "nickname": "SKKUniv리메",
-                                "createdAt": "2023-01-02T12:00:00"
+                                "createdAt": "2023-01-02T12:00:00",
+                                "hide": false
                             }
                         ]
                     }
@@ -919,6 +1020,7 @@ public class UserController {
                 response.setId(user.getId());
                 response.setNickname(user.getNickname());
                 response.setCreatedAt(user.getCreatedAt());
+                response.setHide(user.getHide());
                 return response;
             }).toList();
 

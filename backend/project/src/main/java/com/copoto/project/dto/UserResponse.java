@@ -16,6 +16,9 @@ public class UserResponse {
     @Schema(description = "생성 일시", example = "2025-01-01T13:11:23.703Z")
     private LocalDateTime createdAt;
 
+    @Schema(description = "게시글/댓글 숨김 여부", example = "true")
+    private Boolean hide;
+
     // Getter and Setter
     public String getId() {
         return id;
@@ -36,5 +39,12 @@ public class UserResponse {
     }
     public void setNickname(String nickname){
         this.nickname = nickname;
+    }
+
+    public Boolean getHide() {
+        return hide;
+    }
+    public void setHide(Boolean hide) {
+        this.hide = hide;
     }
 }

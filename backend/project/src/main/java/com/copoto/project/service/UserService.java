@@ -86,6 +86,16 @@ public class UserService {
         userRepository.save(user);
     }
 
+    // 게시글/댓글 숨김 상태 수정 (Update)
+    @Transactional
+    public User setProfileVisibility(String userId, boolean hide) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        user.setHide(hide);
+        return userRepository.save(user);
+    }
+
     // 단일 리프레시 토큰 관리(기존 토큰 삭제 후 새 토큰 발급)
     @Transactional(propagation = Propagation.REQUIRED)
     public RefreshToken createRefreshToken(User user) {

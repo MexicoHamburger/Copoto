@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.ColumnDefault;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -30,6 +31,11 @@ public class User {
 
     private String nickname;
 
+    // ** 아래 3줄 추가 **
+    @Column(name = "hide", columnDefinition = "BOOLEAN", nullable = false)
+    @ColumnDefault("false")
+    private Boolean hide = false; // Java 객체 생성 시 기본값 false
+    
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Post> posts;
 
