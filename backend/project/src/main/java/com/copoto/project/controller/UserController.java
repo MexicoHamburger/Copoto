@@ -863,7 +863,7 @@ public class UserController {
             return ResponseEntity.ok(new ApiResponseCustom<>(200, "Password updated successfully", null));
 
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(401).body(new ApiResponseCustom<>(403, e.getMessage(), null));
+            return ResponseEntity.status(403).body(new ApiResponseCustom<>(403, e.getMessage(), null));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new ApiResponseCustom<>(500, "An unexpected error occurred", null));
         }
