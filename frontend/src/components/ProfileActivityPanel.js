@@ -14,67 +14,92 @@ export default function ProfileActivityPanel({ userId, isSelf = true, labels }) 
 
   const [tab, setTab] = useState("posts"); // "posts" | "comments" | "bookmarks"
   const [loading, setLoading] = useState(false);
-  const [posts, setPosts] = useState([]);         // [{postId, title, createdAt, viewCount, userId}, ...]
-  const [comments, setComments] = useState([]);   // [{commentId, postId, content, createdAt, userId}, ...]
-  const [bookmarks, setBookmarks] = useState([]); // TBD
+  const [toggling, setToggling] = useState(false);
+
+  const [hidden, setHidden] = useState(false);
+  const [authorNick, setAuthorNick] = useState(""); // ✅ 미리보기용 닉네임 상태
+  const [posts, setPosts] = useState([]);       
+  const [comments, setComments] = useState([]); 
+  const [bookmarks, setBookmarks] = useState([]);
 
   const defaultLabels = isSelf
     ? { posts: "내 게시글", comments: "내 댓글", scraps: "내 스크랩" }
     : { posts: "작성한 게시글", comments: "작성한 댓글", scraps: "스크랩" };
   const effectiveLabels = { ...defaultLabels, ...(labels || {}) };
 
-  // ===== 데이터 로드 =====
+  // ===== /user/profile/{id} 한 번에 로드 (posts, comments, hide, nickname) =====
   useEffect(() => {
     if (!userId) return;
     let mounted = true;
 
-    async function fetchData() {
+    (async () => {
       setLoading(true);
       try {
-        if (tab === "posts") {
-          // 관례적 엔드포인트: /post/user/{userId}
-          // 응답 예시 가정: { status, message, data: [{postId, title, createdAt, viewCount, userId}, ...] }
-          try {
-            const res = await api.get(`/post/user/${encodeURIComponent(userId)}`);
-            if (!mounted) return;
-            const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-            setPosts(list);
-          } catch {
-            // 엔드포인트가 없거나 실패하면 빈 목록
-            if (mounted) setPosts([]);
-          }
-        } else if (tab === "comments") {
-          // 문서 제공된 엔드포인트
-          const res = await api.get(`/comment/user/${encodeURIComponent(userId)}`);
-          if (!mounted) return;
-          const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-          setComments(list);
-        } else if (tab === "bookmarks") {
-          // TODO: 스크랩 API 생기면 여기서 호출
-          // 예: const res = await api.get(`/user/${userId}/bookmarks`);
-          // setBookmarks(res.data?.data ?? []);
-          setBookmarks([]);
-        }
+        const res = await api.get(`/user/profile/${encodeURIComponent(userId)}`);
+        if (!mounted) return;
+
+        const data = res?.data?.data || {};
+        setHidden(!!data.hide);
+        setAuthorNick(data.nickname || ""); // ✅ 닉네임 저장
+
+        const rawPosts = Array.isArray(data.posts) ? data.posts : [];
+        const rawComments = Array.isArray(data.comments) ? data.comments : [];
+
+        const mappedPosts = rawPosts.map((p) => ({
+          postId: p.postId,
+          title: p.title,
+          createdAt: p.createdAt,
+          viewCount: p.viewCount ?? 0,
+          userId: p.userId,
+        }));
+        const mappedComments = rawComments.map((c) => ({
+          commentId: c.commentId,
+          postId: c.postId,
+          content: c.content,
+          createdAt: c.createdAt,
+          userId: c.userId,
+        }));
+
+        setPosts(mappedPosts);
+        setComments(mappedComments);
       } catch (e) {
         console.error("활동 데이터 로드 실패:", e);
-        if (mounted) {
-          if (tab === "posts") setPosts([]);
-          if (tab === "comments") setComments([]);
-          if (tab === "bookmarks") setBookmarks([]);
-        }
+        setPosts([]);
+        setComments([]);
       } finally {
         if (mounted) setLoading(false);
       }
-    }
+    })();
 
-    fetchData();
-    return () => { mounted = false; };
-  }, [tab, userId]);
+    return () => {
+      mounted = false;
+    };
+  }, [userId]);
+
+  // ===== 비공개 토글 (본인만 가능) =====
+  const toggleHide = async () => {
+    if (!isSelf || toggling) return;
+    const next = !hidden;
+    try {
+      setToggling(true);
+      setHidden(next);
+      await api.put("/user/profile/hide", { hide: next });
+    } catch (e) {
+      console.error("활동 공개/비공개 변경 실패:", e);
+      setHidden(!next);
+      alert("활동 공개 상태 변경에 실패했습니다.");
+    } finally {
+      setToggling(false);
+    }
+  };
 
   // ===== 공용 UI =====
   const SkeletonLine = ({ w = "w-3/4" }) => (
     <div className={`h-4 ${w} bg-gray-200 rounded animate-pulse`} />
   );
+
+  // ✅ 작성자 라벨은 닉네임 → 없으면 userId → 그래도 없으면 전달된 userId
+  const authorLabel = authorNick || posts[0]?.userId || userId;
 
   const PostItem = ({ item }) => (
     <button
@@ -86,7 +111,7 @@ export default function ProfileActivityPanel({ userId, isSelf = true, labels }) 
         <span className="text-xs text-gray-500">조회 {item.viewCount ?? 0}</span>
       </div>
       <div className="mt-0.5 text-xs text-gray-500">
-        {item.userId ?? userId} · {formatDateKR(item.createdAt)}
+        {authorLabel} · {formatDateKR(item.createdAt)}
       </div>
     </button>
   );
@@ -103,13 +128,70 @@ export default function ProfileActivityPanel({ userId, isSelf = true, labels }) 
         <span className="text-xs text-gray-500">게시글 #{item.postId}</span>
       </div>
       <div className="mt-0.5 text-xs text-gray-500">
-        {item.userId ?? userId} · {formatDateKR(item.createdAt)}
+        {authorLabel} · {formatDateKR(item.createdAt)}
       </div>
     </button>
   );
 
+  // 타인 프로필 + 비공개면 안내만 표시
+  if (!isSelf && hidden) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+            비공개
+          </span>
+        </div>
+        <EmptyHint text="이 사용자는 활동을 숨겼습니다." />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      {/* 상단 상태/토글 줄 */}
+      <div className="flex items-center justify-between px-4 py-3 border-b">
+        <div className="flex items-center gap-2">
+          <span
+            className={
+              "text-xs font-semibold px-2 py-0.5 rounded-full border " +
+              (hidden
+                ? "bg-red-50 text-red-700 border-red-200"
+                : "bg-emerald-50 text-emerald-700 border-emerald-200")
+            }
+          >
+            {hidden ? "비공개" : "공개"}
+          </span>
+          {hidden && isSelf && (
+            <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+              내 활동은 현재 다른 사용자에게 보이지 않습니다.
+            </span>
+          )}
+        </div>
+
+        {isSelf && (
+          <button
+            onClick={toggleHide}
+            disabled={toggling}
+            className={
+              "relative inline-flex h-7 w-14 items-center rounded-full transition " +
+              (hidden ? "bg-gray-300" : "bg-blue-500")
+            }
+            aria-pressed={hidden}
+            aria-label="내 활동 숨기기 토글"
+            title={hidden ? "비공개" : "공개"}
+          >
+            <span
+              className={
+                "inline-block h-6 w-6 transform rounded-full bg-white shadow ring-1 ring-black/5 transition " +
+                (hidden ? "translate-x-1" : "translate-x-7")
+              }
+            />
+            <span className="sr-only">활동 공개 상태 전환</span>
+          </button>
+        )}
+      </div>
+
       {/* 탭 */}
       <div className="flex items-center gap-2 px-2 pt-2">
         {[
