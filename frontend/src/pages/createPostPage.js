@@ -34,24 +34,24 @@ function CreatePostPage() {
   const [loadingFill, setLoadingFill] = useState(editMode && !location.state); // 프리필 로딩
   const tabsRef = useRef(null);
 
+  // 🔔 임시저장 관련 상태
+  const [savingTemp, setSavingTemp] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
+  const [tempList, setTempList] = useState([]);        // [{id,title,contents,createdAt,updatedAt}]
+  const [deletingId, setDeletingId] = useState(null);
+
   // ✅ URL ?boardType= 우선 (수정 모드에서는 전달된 boardType/글 데이터가 더 우선)
   useEffect(() => {
     const qs = new URLSearchParams(location.search);
     const fromQuery = qs.get("boardType") || "";
     if (editMode) {
-      // 수정 모드: state.boardType가 있으면 그것을 우선
       const stBoard = location.state?.boardType;
-      if (stBoard) {
-        setSelectedBoard(normalizeBoard(stBoard));
-      } else if (fromQuery) {
-        setSelectedBoard(normalizeBoard(fromQuery));
-      }
+      if (stBoard) setSelectedBoard(normalizeBoard(stBoard));
+      else if (fromQuery) setSelectedBoard(normalizeBoard(fromQuery));
     } else {
-      if (fromQuery !== null) {
-        setSelectedBoard(normalizeBoard(fromQuery));
-      } else {
-        setSelectedBoard((prev) => normalizeBoard(prev));
-      }
+      if (fromQuery !== null) setSelectedBoard(normalizeBoard(fromQuery));
+      else setSelectedBoard((prev) => normalizeBoard(prev));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search, editMode]);
@@ -107,7 +107,90 @@ function CreatePostPage() {
   const isBoardValid = !!selectedBoard && selectedBoard !== "main";
   const canSubmit = isBoardValid && !!title && !!content && !loadingFill;
 
-  // ✅ 공통 submit (모드에 따라 분기)
+  // =========================
+  // 임시저장 Handlers
+  // =========================
+  const ensureLoginOrRedirect = () => {
+    const token = window.localStorage.getItem('accessToken');
+    if (!token) {
+      window.localStorage.setItem(
+        'afterLogin',
+        editMode
+          ? `/createpost?mode=edit&postId=${editPostId}&boardType=${selectedBoard}`
+          : `/createpost?boardType=${selectedBoard}`
+      );
+      navigate('/login');
+      return false;
+    }
+    return true;
+  };
+
+  // 저장
+  const handleTempSave = async () => {
+    if (!ensureLoginOrRedirect()) return;
+    if (!title && !content) {
+      return alert("임시저장할 제목 또는 내용을 입력해주세요.");
+    }
+    try {
+      setSavingTemp(true);
+      await api.post("/temp-post/save", { title, contents: content });
+      alert("임시저장 완료 (계정당 최대 10개, FIFO)");
+    } catch (e) {
+      console.error(e);
+      alert(e?.response?.data?.message || "임시저장 중 오류가 발생했습니다.");
+    } finally {
+      setSavingTemp(false);
+    }
+  };
+
+  // 목록 열기 + 불러오기
+  const openTempList = async () => {
+    if (!ensureLoginOrRedirect()) return;
+    setListOpen(true);
+    setListLoading(true);
+    try {
+      const res = await api.get("/temp-post/list");
+      setTempList(res?.data?.data ?? []);
+    } catch (e) {
+      console.error(e);
+      alert("임시저장 목록을 불러오지 못했습니다.");
+      setListOpen(false);
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  const loadTempItem = async (id) => {
+    try {
+      const res = await api.get(`/temp-post/${id}`);
+      const data = res?.data?.data ?? {};
+      setTitle(data.title ?? "");
+      setContent(data.contents ?? "");
+      setListOpen(false);
+      alert("임시저장 글을 불러왔습니다.");
+    } catch (e) {
+      console.error(e);
+      alert("임시저장 글을 불러오지 못했습니다.");
+    }
+  };
+
+  const deleteTempItem = async (id) => {
+    if (!window.confirm("이 임시저장 글을 삭제할까요?")) return;
+    try {
+      setDeletingId(id);
+      await api.delete(`/temp-post/${id}`);
+      setTempList((prev) => prev.filter((x) => x.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert("삭제 중 오류가 발생했습니다.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // =========================
+  // 최종 제출
+  // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -138,11 +221,9 @@ function CreatePostPage() {
 
     try {
       if (editMode) {
-        // ✅ 게시글 수정
         await api.put(`/post/${editPostId}`, payload);
         navigate(`/pages/${editPostId}`);
       } else {
-        // ✅ 새로 작성
         const res = await api.post('/post/create', payload);
         const newId = res?.data?.data?.postId;
         if (newId) navigate(`/pages/${newId}`);
@@ -158,6 +239,9 @@ function CreatePostPage() {
     }
   };
 
+  // =========================
+  // Render
+  // =========================
   return (
     <div className="pt-[30px]">
       <h1 className="text-3xl mb-4">{editMode ? "게시글 수정" : "게시글 작성"}</h1>
@@ -252,17 +336,24 @@ function CreatePostPage() {
             <>
               <button
                 type="button"
-                onClick={() => {}}
-                className="mt-5 mr-5 p-2 pl-4 pr-4 bg-gray-200 text-blue-500 text-xs font-bold rounded-lg hover:bg-gray-300"
+                onClick={handleTempSave}
+                disabled={savingTemp}
+                className={
+                  "mt-5 mr-5 p-2 pl-4 pr-4 text-xs font-bold rounded-lg " +
+                  (savingTemp
+                    ? "bg-gray-300 text-gray-600 cursor-wait"
+                    : "bg-gray-200 text-blue-500 hover:bg-gray-300")
+                }
               >
-                게시글 임시저장 (미구현)
+                {savingTemp ? "임시저장 중..." : "게시글 임시저장"}
               </button>
+
               <button
                 type="button"
-                onClick={() => {}}
+                onClick={openTempList}
                 className="mt-5 p-2 pl-4 pr-4 bg-gray-200 text-blue-500 text-xs font-bold rounded-lg hover:bg-gray-300"
               >
-                임시저장 게시글 불러오기 (미구현)
+                임시저장 게시글 불러오기
               </button>
             </>
           )}
@@ -281,6 +372,7 @@ function CreatePostPage() {
         </div>
       </form>
 
+      {/* 혐오표현 차단 안내 모달 */}
       {showBadModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w/full max-w-sm shadow-lg">
@@ -294,6 +386,69 @@ function CreatePostPage() {
                 확인
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 임시저장 목록 모달 */}
+      {listOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold">임시저장 목록</h2>
+              <button
+                onClick={() => setListOpen(false)}
+                className="text-sm px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200"
+              >
+                닫기
+              </button>
+            </div>
+
+            {listLoading ? (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-12 bg-gray-100 animate-pulse rounded-xl" />
+                ))}
+              </div>
+            ) : tempList.length === 0 ? (
+              <div className="text-gray-600 text-sm">임시저장된 글이 없습니다.</div>
+            ) : (
+              <div className="space-y-2 max-h-[360px] overflow-auto">
+                {tempList.map((it) => (
+                  <div key={it.id} className="p-3 rounded-xl border flex items-start gap-3">
+                    <div className="flex-1">
+                      <div className="font-medium line-clamp-1">{it.title || "(제목 없음)"}</div>
+                      <div className="text-xs text-gray-600 line-clamp-2 whitespace-pre-wrap">
+                        {it.contents}
+                      </div>
+                      <div className="text-[11px] text-gray-400 mt-1">
+                        {it.updatedAt || it.createdAt}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => loadTempItem(it.id)}
+                        className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs hover:bg-blue-700"
+                      >
+                        불러오기
+                      </button>
+                      <button
+                        onClick={() => deleteTempItem(it.id)}
+                        disabled={deletingId === it.id}
+                        className={
+                          "px-3 py-2 rounded-lg text-xs " +
+                          (deletingId === it.id
+                            ? "bg-gray-300 text-gray-600 cursor-wait"
+                            : "bg-gray-100 hover:bg-gray-200")
+                        }
+                      >
+                        {deletingId === it.id ? "삭제 중..." : "삭제"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
